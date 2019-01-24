@@ -324,6 +324,10 @@ ifeq ($(TARGET_PRODUCT),GOPLAY2)
 DTSSUBDIR := GOPLAY2
 endif
 
+ifeq ($(TARGET_PRODUCT),Pixi445Cricket)
+DTSSUBDIR := Pixi445Cricket
+endif
+
 all:	$(KBUILD_IMAGE) $(KBUILD_DTBS)
 
 boot := arch/arm/boot
@@ -386,6 +390,10 @@ endif
 #chuhua.liang for GOPLAY2 sharegit.
 ifeq ($(TARGET_PRODUCT),GOPLAY2)
         $(Q)$(MAKE) $(build)=$(boot)/dts/GOPLAY2 MACHINE=$(MACHINE) dtbs
+endif
+
+ifeq ($(TARGET_PRODUCT),Pixi445Cricket)
+	$(Q)$(MAKE) $(build)=$(boot)/dts/Pixi445Cricket MACHINE=$(MACHINE) dtbs
 endif
 
 zImage-dtb: vmlinux scripts dtbs
