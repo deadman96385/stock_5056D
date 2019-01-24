@@ -314,6 +314,11 @@ ifeq ($(TARGET_PRODUCT),Pixi445SPR)
 DTSSUBDIR := Pixi445SPR
 endif
 
+#ying.pang for Pixi464G sharegit
+ifeq ($(TARGET_PRODUCT),Pixi464G)
+DTSSUBDIR := Pixi464G
+endif
+
 all:	$(KBUILD_IMAGE) $(KBUILD_DTBS)
 
 boot := arch/arm/boot
@@ -366,6 +371,11 @@ endif
 #ying.pang for Pixi445SPR sharegit 
 ifeq ($(TARGET_PRODUCT),Pixi445SPR)
 	$(Q)$(MAKE) $(build)=$(boot)/dts/Pixi445SPR MACHINE=$(MACHINE) dtbs
+endif
+
+#ying.pang for Pixi464G sharegit 
+ifeq ($(TARGET_PRODUCT),Pixi464G)
+	$(Q)$(MAKE) $(build)=$(boot)/dts/Pixi464G MACHINE=$(MACHINE) dtbs
 endif
 
 zImage-dtb: vmlinux scripts dtbs

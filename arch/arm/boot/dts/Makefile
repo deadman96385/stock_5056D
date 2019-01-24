@@ -247,6 +247,11 @@ ifeq ($(TARGET_PRODUCT),Pixi445SPR)
 subdir- := Pixi445SPR
 endif
 
+#ying.pang for Pixi464G sharegit 
+ifeq ($(TARGET_PRODUCT),Pixi464G)
+subdir- := Pixi464G
+endif
+
 # *.dtb used to be generated in the directory above. Clean out the
 # old build results so people don't accidentally use them.
 dtbs: $(addprefix $(obj)/, $(DTB_LIST))
