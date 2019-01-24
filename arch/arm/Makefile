@@ -286,6 +286,10 @@ DTSSUBDIR := qcom
 ifeq ($(TARGET_PRODUCT),POP45C)
 DTSSUBDIR := POP45C
 endif
+
+ifeq ($(TARGET_PRODUCT),POP455C)
+DTSSUBDIR := POP455C
+endif
 # [Feature]-Add-END by TCTSZ. shengwang.luo@tcl.com, 2015/10/10, ALM714748
 
 all:	$(KBUILD_IMAGE) $(KBUILD_DTBS)
@@ -314,6 +318,10 @@ dtbs: scripts
 # [Feature]-Add-BEGIN by TCTSZ. add DTS project shengwang.luo@tcl.com, 2015/10/10, ALM714748
 ifeq ($(TARGET_PRODUCT),POP45C)
 	$(Q)$(MAKE) $(build)=$(boot)/dts/POP45C MACHINE=$(MACHINE) dtbs
+endif
+
+ifeq ($(TARGET_PRODUCT),POP455C)
+	$(Q)$(MAKE) $(build)=$(boot)/dts/POP455C MACHINE=$(MACHINE) dtbs
 endif
 # [Feature]-Add-END by TCTSZ. shengwang.luo@tcl.com, 2015/10/10, ALM714748
 

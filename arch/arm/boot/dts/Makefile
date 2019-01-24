@@ -220,6 +220,10 @@ endif
 ifeq ($(TARGET_PRODUCT),POP45C)
 subdir- := POP45C
 endif
+
+ifeq ($(TARGET_PRODUCT),POP455C)
+subdir- := POP455C
+endif
 #[Feature]-Add END by TCTSZ. shengwang.luo@tcl.com, 2015/10/10, ALM714748
 
 # *.dtb used to be generated in the directory above. Clean out the
