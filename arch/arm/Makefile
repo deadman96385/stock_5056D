@@ -328,6 +328,10 @@ ifeq ($(TARGET_PRODUCT),Pixi445Cricket)
 DTSSUBDIR := Pixi445Cricket
 endif
 
+ifeq ($(TARGET_PRODUCT),Pixi464GCricket)
+DTSSUBDIR := Pixi464GCricket
+endif
+
 all:	$(KBUILD_IMAGE) $(KBUILD_DTBS)
 
 boot := arch/arm/boot
@@ -394,6 +398,10 @@ endif
 
 ifeq ($(TARGET_PRODUCT),Pixi445Cricket)
 	$(Q)$(MAKE) $(build)=$(boot)/dts/Pixi445Cricket MACHINE=$(MACHINE) dtbs
+endif
+
+ifeq ($(TARGET_PRODUCT),Pixi464GCricket)
+        $(Q)$(MAKE) $(build)=$(boot)/dts/Pixi464GCricket MACHINE=$(MACHINE) dtbs
 endif
 
 zImage-dtb: vmlinux scripts dtbs

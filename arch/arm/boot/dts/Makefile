@@ -261,6 +261,10 @@ ifeq ($(TARGET_PRODUCT),Pixi445Cricket)
 subdir- := Pixi445Cricket
 endif
 
+ifeq ($(TARGET_PRODUCT),Pixi464GCricket)
+subdir- := Pixi464GCricket
+endif
+
 # *.dtb used to be generated in the directory above. Clean out the
 # old build results so people don't accidentally use them.
 dtbs: $(addprefix $(obj)/, $(DTB_LIST))
