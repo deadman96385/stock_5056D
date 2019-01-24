@@ -115,7 +115,13 @@ static struct wcd_mbhc_config mbhc_cfg = {
 	.key_code[5] = 0,
 	.key_code[6] = 0,
 	.key_code[7] = 0,
+	//[FIX PR:1908992/1915775]-begin by JRD_SZ(buqing.wang@tcl.com),Audio connector plug into the phone, could not find a headphone is inserted, not audio output, 4/9/2016
+	#if defined (JRD_PROJECT_POP45) || defined (JRD_PROJECT_POP455C)
+	.linein_th = 30000,
+	#else
 	.linein_th = 5000,
+	#endif
+	//[FIX PR:1908992/1915775]-end by JRD_SZ(buqing.wang@tcl.com),Audio connector plug into the phone, could not find a headphone is inserted, not audio output, 4/9/2016
 };
 
 static struct wcd_mbhc_config wcd_mbhc_cfg = {

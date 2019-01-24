@@ -148,6 +148,8 @@ static int jrd_ctp_sysfs_init(struct goodix_ts_data *ts);
 static void jrd_ctp_sysfs_exit(void);
 struct goodix_ts_data *sys_ts_data = NULL;
 //Add by Luoxingxing-END
+
+extern int epl_detect_pocket(void);
 #endif
 
 extern u16 max_limit_value;    // screen max limit
@@ -672,14 +674,16 @@ static void goodix_ts_work_func(struct work_struct *work)
 		            {
 		                GTP_INFO("Wakeup by gesture(^), light up the screen!");
 		            }
-		            doze_status = DOZE_WAKEUP;
+		            /*doze_status = DOZE_WAKEUP;
 		            input_report_key(ts->input_dev, KEY_POWER, 1);
 		            input_sync(ts->input_dev);
 		            input_report_key(ts->input_dev, KEY_POWER, 0);
-		            input_sync(ts->input_dev);
+		            input_sync(ts->input_dev);*/
 		            // clear 0x814B
 		            doze_buf[2] = 0x00;
 		            gtp_i2c_write(i2c_connect_client, doze_buf, 3);
+
+			    gtp_enter_doze(ts);
 		        }
 		        else if ( (doze_buf[2] == 0xAA) || (doze_buf[2] == 0xBB) ||
 		            (doze_buf[2] == 0xAB) || (doze_buf[2] == 0xBA) )
@@ -688,26 +692,40 @@ static void goodix_ts_work_func(struct work_struct *work)
 		            u8 type = ((doze_buf[2] & 0x0F) - 0x0A) + (((doze_buf[2] >> 4) & 0x0F) - 0x0A) * 2;
 		            
 		            GTP_INFO("%s slide to light up the screen!", direction[type]);
-		            doze_status = DOZE_WAKEUP;
+		            /*doze_status = DOZE_WAKEUP;
 		            input_report_key(ts->input_dev, KEY_POWER, 1);
 		            input_sync(ts->input_dev);
 		            input_report_key(ts->input_dev, KEY_POWER, 0);
-		            input_sync(ts->input_dev);
+		            input_sync(ts->input_dev);*/
 		            // clear 0x814B
 		            doze_buf[2] = 0x00;
 		            gtp_i2c_write(i2c_connect_client, doze_buf, 3);
+			    
+			    gtp_enter_doze(ts);
 		        }
 		        else if (0xCC == doze_buf[2])
 		        {
 		            GTP_INFO("Double click to light up the screen!");
-		            doze_status = DOZE_WAKEUP;
-		            input_report_key(ts->input_dev, KEY_POWER, 1);
-		            input_sync(ts->input_dev);
-		            input_report_key(ts->input_dev, KEY_POWER, 0);
-		            input_sync(ts->input_dev);
-		            // clear 0x814B
+		            		 
+			    // clear 0x814B
 		            doze_buf[2] = 0x00;
-		            gtp_i2c_write(i2c_connect_client, doze_buf, 3);
+		            gtp_i2c_write(i2c_connect_client, doze_buf, 3);     
+
+#ifdef CONFIG_SENSORS_EPL259X
+			    if (!epl_detect_pocket())
+			    {
+				GTP_INFO("In pocket double click wake up abort.\n");
+				gtp_enter_doze(ts);
+				goto out_gesture;
+			    }
+#endif
+			    
+
+			    doze_status = DOZE_WAKEUP;
+		            input_report_key(ts->input_dev, KEY_UNLOCK, 1);
+		            input_sync(ts->input_dev);
+		            input_report_key(ts->input_dev, KEY_UNLOCK, 0);
+		            input_sync(ts->input_dev);
 		        }
 		        else
 		        {
@@ -717,6 +735,8 @@ static void goodix_ts_work_func(struct work_struct *work)
 		            gtp_enter_doze(ts);
 		        }
 		    }
+
+out_gesture:
 		    if (ts->use_irq)
 		    {
 		        gtp_irq_enable(ts);
@@ -1218,7 +1238,7 @@ static irqreturn_t goodix_ts_irq_handler(int irq, void *dev_id)
     GTP_DEBUG_FUNC();
  
     gtp_irq_disable(ts);
-
+    wake_lock_timeout(&ts->gtp_wake_lock, HZ/2);
     queue_work(goodix_wq, &ts->work);
     
     return IRQ_HANDLED;
@@ -1357,8 +1377,16 @@ static ssize_t jrd_gesture_switch_store(struct device *dev,
 		GTP_ERROR(KERN_ERR "%s -- invalid data '%s'...\n", __func__, buf);
 		return -EINVAL;
 	}
-
+	
+	if (sys_ts_data->gtp_is_suspend) {
+		GTP_ERROR(KERN_ERR "%s -- set gesture in suspend data '%d'...\n", __func__, data);
+		return -EINVAL;
+	}
+	
 	jrd_gesture_status = data ? 1 : 0;
+
+	GTP_INFO("%s:gestrue=%d.", __func__, jrd_gesture_status);	
+
 	return size;
 }
 
@@ -2666,7 +2694,8 @@ static s8 gtp_request_input_dev(struct goodix_ts_data *ts)
 #endif
 
 #if GTP_GESTURE_WAKEUP
-    input_set_capability(ts->input_dev, EV_KEY, KEY_POWER);
+    //input_set_capability(ts->input_dev, EV_KEY, KEY_POWER);
+    input_set_capability(ts->input_dev, EV_KEY, KEY_UNLOCK);
 #endif 
 
 #if GTP_CHANGE_X2Y
@@ -3444,6 +3473,7 @@ static int goodix_ts_probe(struct i2c_client *client, const struct i2c_device_id
 #if GTP_GESTURE_WAKEUP
 	//	enable_irq_wake(client->irq);
 #endif  
+	wake_lock_init(&ts->gtp_wake_lock, WAKE_LOCK_SUSPEND, "gtp-double-click");
     }
 	//Add by Luoxingxing-START
 	jrd_ctp_sysfs_init(ts);
@@ -3496,6 +3526,8 @@ static int goodix_ts_remove(struct i2c_client *client)
             GTP_GPIO_AS_INPUT(gtp_int_gpio);
             GTP_GPIO_FREE(gtp_int_gpio);
             free_irq(client->irq, ts);
+	    wake_lock_destroy(&ts->gtp_wake_lock);
+
         }
         else
         {
@@ -3525,9 +3557,11 @@ static void goodix_ts_suspend(struct goodix_ts_data *ts)
 
     GTP_DEBUG_FUNC();
 	
-	if (ts->enter_update) {
+	if (ts->enter_update || ts->gtp_is_suspend) {
 		return;
 	}
+
+	cancel_work_sync(&ts->work);
 #if HOTKNOT_ENABLE
 
 #if HOTKNOT_BLOCK_RW
@@ -3605,11 +3639,12 @@ static void goodix_ts_resume(struct goodix_ts_data *ts)
     s8 ret = -1;
 
     GTP_DEBUG_FUNC();
-	if (ts->enter_update) {
+	if (ts->enter_update || !ts->gtp_is_suspend) {
 		return;
 	}
 
-	
+	cancel_work_sync(&ts->work);
+
 	if(!jrd_gesture_status)
 	{
 		ret = gtp_power_switch(ts->client, SWITCH_ON);

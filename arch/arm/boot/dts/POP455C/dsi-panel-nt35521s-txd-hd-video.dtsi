@@ -17,7 +17,7 @@
  *---------------------------------------------------------------------------*/
 &mdss_mdp {
 	dsi_nt35521s_txd_hd_vid: qcom,mdss_dsi_nt35521s_txd_hd_video {
-		qcom,mdss-dsi-panel-name = "nt35521s txd hd video mode dsi panel[20151010]";
+		qcom,mdss-dsi-panel-name = "nt35521s txd hd video mode dsi panel[20160411]";
 		qcom,mdss-dsi-panel-controller = <&mdss_dsi0>;
 		qcom,mdss-dsi-panel-type = "dsi_video_mode";
 		qcom,mdss-dsi-panel-destination = "display_1";
@@ -57,7 +57,7 @@
             29 01 00 00 00 00 03 BD 70 00 
             29 01 00 00 00 00 02 CA 00 
             29 01 00 00 00 00 02 C0 04 
-            29 01 00 00 00 00 02 BE 40 
+            //29 01 00 00 00 00 02 BE 40 //OTP VCOM
             29 01 00 00 00 00 03 B8 05 05 
             29 01 00 00 00 00 03 B9 46 46 
             29 01 00 00 00 00 03 B3 2D 2D

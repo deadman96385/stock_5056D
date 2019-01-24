@@ -523,8 +523,13 @@ struct stk3x1x_data {
 	struct pinctrl *pinctrl;
 	struct pinctrl_state *pin_default;
 	struct pinctrl_state *pin_sleep;
-// [Feature]-Add-END by TCTSZ. ning.wei@tcl.com, 2015/08/03, for add stk p/l sensor pull up&down ALM389755	
+// [Feature]-Add-END by TCTSZ. ning.wei@tcl.com, 2015/08/03, for add stk p/l sensor pull up&down ALM389755
+
+	int near_far_stat;
+	struct mutex enable_mutex;	
 };
+
+struct stk3x1x_data *stk3x1x_obj = NULL;
 
 //#define ALS_REPORT_LUX_TABLE
 #ifdef ALS_REPORT_LUX_TABLE
@@ -1360,12 +1365,16 @@ static int32_t stk3x1x_enable_ps(struct stk3x1x_data *ps_data, uint8_t enable, u
 	curr_ps_enable = ps_data->ps_enabled?1:0;	
 	if(curr_ps_enable == enable)
 		return 0;
+
+	mutex_lock(&ps_data->enable_mutex);
+
 //modify(add) by junfeng.zhou.sz for add power supply begin . 20140214		
 #ifdef POWER_REGULATOR
     	if (enable) {
 		ret = stk3x1x_device_ctl(ps_data, enable);
-		if (ret)
-			return ret;
+		if (ret) {
+			goto out_err;
+		}
 	} 
 #endif
 //modify(add) by junfeng.zhou.sz for add power supply end . 
@@ -1382,7 +1391,7 @@ static int32_t stk3x1x_enable_ps(struct stk3x1x_data *ps_data, uint8_t enable, u
 	{
 		printk(KERN_INFO "%s: since ges is enabled, PS is disabled\n", __func__);
 		ps_data->re_enable_ps = enable ? true : false;
-		return 0;
+		goto out_err;
 	}
 #endif
 #ifdef STK_TUNE0
@@ -1400,8 +1409,9 @@ static int32_t stk3x1x_enable_ps(struct stk3x1x_data *ps_data, uint8_t enable, u
 	}
 
 	ret = stk3x1x_get_state(ps_data);
-	if(ret < 0)
-		return ret;
+	if(ret < 0){
+		goto out_err;
+	}
 	w_state_reg = ret;
 	
 	
@@ -1413,13 +1423,15 @@ static int32_t stk3x1x_enable_ps(struct stk3x1x_data *ps_data, uint8_t enable, u
 			w_state_reg |= STK_STATE_EN_WAIT_MASK;			
 	}	
 	ret = stk3x1x_set_state(ps_data, w_state_reg);
-	if(ret < 0)
-		return ret;	
+	if(ret < 0){
+		goto out_err;
+	}	
 
     if(enable)
 	{
 	    //modify(add) by junfeng.zhou.sz for evolution begin . 20140210
 	    call_flag_stk_ps = 1;
+	    ps_data->near_far_stat = -1;
 	    //modify(add) by junfeng.zhou.sz for evolution end .
 //modify(add) by junfeng.zhou.sz for cali the psensor eeverytime call with 533451 begin . 20140115
 #ifdef STK_TUNE0
@@ -1484,8 +1496,9 @@ static int32_t stk3x1x_enable_ps(struct stk3x1x_data *ps_data, uint8_t enable, u
 		{
 			usleep_range(4000, 5000);
 			ret = stk3x1x_get_flag(ps_data);
-			if (ret < 0)
-				return ret;
+			if (ret < 0) {
+				goto out_err;
+			}
 			near_far_state = ret & STK_FLG_NF_MASK;			
 			//report a far event to cover the dirty data from dirver or android 
 			// 0 near  and 1 far
@@ -1528,12 +1541,18 @@ static int32_t stk3x1x_enable_ps(struct stk3x1x_data *ps_data, uint8_t enable, u
 #ifdef POWER_REGULATOR
 	if (!enable) {
 		ret = stk3x1x_device_ctl(ps_data, enable);
-		if (ret)
-			return ret;
+		if (ret) {
+			goto out_err;
+		}
 	}
 #endif
 //modify(add) by junfeng.zhou.sz for add power supply end . 
+	mutex_unlock(&ps_data->enable_mutex);
 	return ret;
+out_err:
+	mutex_unlock(&ps_data->enable_mutex);
+	return ret;
+
 }
 
 static int32_t stk3x1x_enable_als(struct stk3x1x_data *ps_data, uint8_t enable)
@@ -1546,12 +1565,15 @@ static int32_t stk3x1x_enable_als(struct stk3x1x_data *ps_data, uint8_t enable)
 
 	if(curr_als_enable == enable)
 		return 0;
+
+	mutex_lock(&ps_data->enable_mutex);
+
 //modify(add) by junfeng.zhou.sz for add power supply begin . 20140214
 #ifdef POWER_REGULATOR    
 	if (enable) {
 		ret = stk3x1x_device_ctl(ps_data, enable);
 		if (ret)
-			return ret;
+			goto out_err;
 	}
 #endif
 //modify(add) by junfeng.zhou.sz for add power supply end . 
@@ -1567,7 +1589,7 @@ static int32_t stk3x1x_enable_als(struct stk3x1x_data *ps_data, uint8_t enable)
 	{
 		printk(KERN_INFO "%s: since ges is enabled, ALS is disabled\n", __func__);
 		ps_data->re_enable_als = enable ? true : false;
-		return 0;
+		goto out_err;
 	}	
 #endif	/* #ifdef STK_GES */	
 
@@ -1590,7 +1612,7 @@ static int32_t stk3x1x_enable_als(struct stk3x1x_data *ps_data, uint8_t enable)
 
 	ret = stk3x1x_get_state(ps_data);
 	if(ret < 0)
-		return ret;
+		goto out_err;
 	
 	w_state_reg = (uint8_t)(ret & (~(STK_STATE_EN_ALS_MASK | STK_STATE_EN_WAIT_MASK))); 
 	if(enable)	
@@ -1600,7 +1622,7 @@ static int32_t stk3x1x_enable_als(struct stk3x1x_data *ps_data, uint8_t enable)
 
 	ret = stk3x1x_set_state(ps_data, w_state_reg);
 	if(ret < 0)
-		return ret;	
+		goto out_err;	
 
     	if (enable)
     	{						
@@ -1634,11 +1656,16 @@ static int32_t stk3x1x_enable_als(struct stk3x1x_data *ps_data, uint8_t enable)
 	if (!enable) {
 		ret = stk3x1x_device_ctl(ps_data, enable);
 		if (ret)
-			return ret;
+			goto out_err;
 	}
 #endif
 //modify(add) by junfeng.zhou.sz for add power supply end . 
-    return ret;
+	mutex_unlock(&ps_data->enable_mutex);
+    	return ret;
+
+out_err:
+	mutex_unlock(&ps_data->enable_mutex);
+	return ret;
 }
 
 static int32_t stk3x1x_get_als_reading(struct stk3x1x_data *ps_data)
@@ -4518,6 +4545,70 @@ static int stk3x1x_parse_dt(struct device *dev,
 	return -ENODEV;
 }
 #endif /* !CONFIG_OF */
+
+///////////////////////////////////////////////////////////////
+#define EPL_NEAR 0
+#define EPL_FAR  1
+int stk_detect_pocket(void)
+{
+	struct stk3x1x_data *ps_data = stk3x1x_obj;
+	int ret = -1;
+	uint8_t old_mode = 0;
+	uint8_t w_state_reg;
+	int ps = 0;
+      
+	
+	printk("%s", __func__);
+	
+	if (stk3x1x_obj)
+	{
+		mutex_lock(&ps_data->enable_mutex);
+		if (ps_data->ps_enabled)
+		{
+			ret = ps_data->near_far_stat;
+			printk("stk sensor pocket mode ps near far = %d\n", ret);
+		}
+		else
+		{	
+			stk3x1x_device_ctl(ps_data, 1);
+
+			stk3x1x_validate_n_handle(ps_data->client);
+			old_mode =stk3x1x_get_state(ps_data);
+			w_state_reg &= ~(STK_STATE_EN_PS_MASK | STK_STATE_EN_WAIT_MASK | STK_STATE_EN_AK_MASK);
+			w_state_reg |= STK_STATE_EN_PS_MASK;
+			stk3x1x_set_state(ps_data, w_state_reg);
+
+			mdelay(30);
+
+			ps = stk3x1x_get_ps_reading(ps_data);
+			stk3x1x_set_state(ps_data, old_mode);
+
+			stk3x1x_device_ctl(ps_data, 0);
+
+
+			if (ps > ps_data->psi+400)
+			{
+				ret = 0;
+			}
+			else
+			{
+
+				ret = 1;
+			}
+
+			printk("pocket mode ps value = %d,old_mod=0x%x\n", ps, old_mode);
+		}
+		mutex_unlock(&ps_data->enable_mutex);
+	
+		return ret;
+	}
+
+	return ret;
+}
+
+EXPORT_SYMBOL_GPL(stk_detect_pocket);
+////////////////////////////////////////////////////////////////////
+
 static int stk3x1x_probe(struct i2c_client *client,
                         const struct i2c_device_id *id)
 {
@@ -4538,12 +4629,17 @@ static int stk3x1x_probe(struct i2c_client *client,
 		printk(KERN_ERR "%s: failed to allocate stk3x1x_data\n", __func__);
 		return -ENOMEM;
 	}
+
+	stk3x1x_obj = ps_data;
 	ps_data->client = client;
 	i2c_set_clientdata(client,ps_data);
 	mutex_init(&ps_data->io_lock);
     	mutex_init(&ps_data->io_als_lock);
     	mutex_init(&stk_i2c_lock);
 	wake_lock_init(&ps_data->ps_wakelock,WAKE_LOCK_SUSPEND, "stk_input_wakelock");
+
+	mutex_init(&ps_data->enable_mutex);
+    	ps_data->near_far_stat = -1;
 
 #ifdef STK_POLL_PS			
 	wake_lock_init(&ps_data->ps_nosuspend_wl,WAKE_LOCK_SUSPEND, "stk_nosuspend_wakelock");

@@ -47,6 +47,7 @@
 #ifdef CONFIG_HAS_EARLYSUSPEND
 #include <linux/earlysuspend.h>
 #endif
+#include <linux/wakelock.h>
 
 //***************************PART1:ON/OFF define*******************************
 #define GTP_CUSTOM_CFG        1
@@ -141,6 +142,7 @@ struct goodix_ts_data {
     u8 rqst_processing;
     u8 is_950;
 #endif
+    struct wake_lock gtp_wake_lock;
     
 };
 

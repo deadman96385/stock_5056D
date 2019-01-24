@@ -116,6 +116,7 @@ int fts_Gesture_init(struct input_dev *input_dev)
 	input_set_capability(input_dev, EV_KEY, KEY_GESTURE_S); 
 	input_set_capability(input_dev, EV_KEY, KEY_GESTURE_V);
 	input_set_capability(input_dev, EV_KEY, KEY_GESTURE_Z);
+	input_set_capability(input_dev, EV_KEY, KEY_UNLOCK);
 		
 	__set_bit(KEY_GESTURE_RIGHT, input_dev->keybit);
 	__set_bit(KEY_GESTURE_LEFT, input_dev->keybit);
@@ -170,9 +171,9 @@ static void fts_check_gesture(struct input_dev *input_dev,int gesture_id)
 	                input_sync(input_dev);
 	                break;
 	        case GESTURE_DOUBLECLICK:
-	                input_report_key(input_dev, KEY_POWER, 1);
+	                input_report_key(input_dev, KEY_UNLOCK, 1);
 	                input_sync(input_dev);
-	                input_report_key(input_dev, KEY_POWER, 0);
+	                input_report_key(input_dev, KEY_UNLOCK, 0);
 	                input_sync(input_dev);
 	                break;
 	        case GESTURE_O:

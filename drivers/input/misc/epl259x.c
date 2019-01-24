@@ -296,6 +296,9 @@ struct epl_sensor_priv
 
     // tracebility
     struct trace_data factory_data;
+
+    struct mutex enable_mutex;
+    int near_far_stat;
 } ;
 
 static struct platform_device *sensor_dev;
@@ -313,6 +316,9 @@ static int als_sensing_time(int intt, int adc, int cycle);
 static void epl_sensor_eint_work(struct work_struct *work);
 static void epl_sensor_polling_work(struct work_struct *work);
 static int als_intr_update_table(struct epl_sensor_priv *epld);
+
+int epl_detect_pocket(void);
+
 #if PS_DYN_K
 void epl_sensor_dynk_thd_polling_work(struct work_struct *work);
 void epl_sensor_restart_dynk_polling(void);
@@ -765,7 +771,7 @@ static void epl_sensor_report_ps_status(void)
 
     LOG_INFO("------------------- epl_sensor.ps.data.data=%d, value=%d \n\n", epl_sensor.ps.data.data, epl_sensor.ps.compare_low >> 3);
     print_local_time("report ps");
-
+    epld->near_far_stat = epl_sensor.ps.compare_low >> 3;
     epl_report_value(epld->ps_input_dev, ABS_DISTANCE, epl_sensor.ps.compare_low >> 3);
 }
 
@@ -1701,6 +1707,8 @@ void epl_sensor_enable_ps(int enable)
 
     LOG_INFO("[%s]: ps enable=%d \r\n", __func__, enable);
 
+    mutex_lock(&epld->enable_mutex);
+
 #if HS_ENABLE
     if(enable_hs == 1 && enable == 1)
     {
@@ -1760,6 +1768,7 @@ void epl_sensor_enable_ps(int enable)
 	    epld->is_dail_cail_done = false;
 	    epld->detect_sunshine = false;
 	    epld->is_set_cover_thd = false;
+	    epld->near_far_stat = -1;
 	    hrtimer_start(&epld->dial_cali_timer, epld->dial_cali_delay, HRTIMER_MODE_REL);
 
 #if PS_DYN_K
@@ -1791,6 +1800,8 @@ void epl_sensor_enable_ps(int enable)
 	}
 
     }
+
+    mutex_unlock(&epld->enable_mutex);
 }
 
 void epl_sensor_enable_als(int enable)
@@ -1799,13 +1810,19 @@ void epl_sensor_enable_als(int enable)
 
     LOG_INFO("[%s]: enable=%d \r\n", __func__, enable);
 
+    mutex_lock(&epld->enable_mutex);
+
     if(epld->enable_lflag != enable)
     {
 
 	epld->enable_lflag = enable;
 	memset(&epld->fir, 0x00, sizeof(struct data_filter));
-	epl_power_ctl(epld, enable);
-	msleep(10);
+	
+	if (enable)
+	{
+		epl_power_ctl(epld, true);
+		msleep(10);
+	}
 #if ALS_DYN_INTT
         if(epl_sensor.als.report_type == CMC_BIT_DYN_INT)
         {
@@ -1819,7 +1836,14 @@ void epl_sensor_enable_als(int enable)
         if(epld->enable_lflag == 1)
             epl_sensor_fast_update(epld->client);
         epl_sensor_update_mode(epld->client);
+
+	if (!enable)
+	{
+		epl_power_ctl(epld, false);
+	}
     }
+
+    mutex_unlock(&epld->enable_mutex);
 }
 
 #if PS_DYN_K
@@ -1911,12 +1935,12 @@ static int als_sensing_time(int intt, int adc, int cycle)
     als_adc = adc_value[adc>>3];
     als_cycle = cycle_value[cycle];
 
-    LOG_INFO("ALS: INTT=%d, ADC=%d, Cycle=%d \r\n", als_intt, als_adc, als_cycle);
+    //LOG_INFO("ALS: INTT=%d, ADC=%d, Cycle=%d \r\n", als_intt, als_adc, als_cycle);
 
     sensing_us_time = (als_intt + als_adc*2*2) * 2 * als_cycle;
     sensing_ms_time = sensing_us_time / 1000;
 
-    LOG_INFO("[%s]: sensing=%d ms \r\n", __func__, sensing_ms_time);
+    //LOG_INFO("[%s]: sensing=%d ms \r\n", __func__, sensing_ms_time);
 
     return (sensing_ms_time + 5);
 }
@@ -4608,7 +4632,7 @@ static void boot_cali_dwork_func(struct work_struct *work)
 			struct epl_sensor_priv, boot_cali_dwork.work);
 
     epld->is_boot_cali = true;
-    epl_power_ctl(epld, true);
+    //epl_power_ctl(epld, true);
     msleep(10);
     epl_sensor_enable_ps(1);
     msleep(120);
@@ -4640,7 +4664,7 @@ static void boot_cali_dwork_func(struct work_struct *work)
     
     cancel_delayed_work(&epld->boot_cali_dwork);
     epl_sensor_enable_ps(0);
-    epl_power_ctl(epld, false);
+    //epl_power_ctl(epld, false);
     epld->is_boot_cali = false;
     LOG_INFO("%s:get bootup rawdata = %d\n", __func__, epld->min_psi);
 }
@@ -4676,6 +4700,78 @@ void epl_rm_dial_cali_work(struct epl_sensor_priv *epld)
     hrtimer_cancel(&epld->dial_cali_timer);
     destroy_workqueue(epld->dial_cali_wq);
 }
+/*----------------------------------------------------------------------------*/
+#define EPL_NEAR 0
+#define EPL_FAR  1
+int epl_detect_pocket(void)
+{
+	struct epl_sensor_priv *epld = epl_sensor_obj;
+	int ret = -1;
+	int old_mode = 0;
+	
+	LOG_INFO("%s", __func__);
+	
+	if (epld)
+	{
+		mutex_lock(&epld->enable_mutex);
+		if (epld->enable_pflag)
+		{
+			ret = epld->near_far_stat;
+			LOG_INFO("pocket mode ps near far = %d\n", ret);
+		}
+		else
+		{	
+			epl_power_ctl(epld, true);
+
+			old_mode = epl_sensor.mode;
+			epl_sensor.mode = EPL_MODE_PS;
+			
+			write_global_variable(epld->client);
+			epl_sensor_fast_update(epld->client);		
+			epl_sensor_I2C_Write(epld->client, 0x11, EPL_POWER_OFF | EPL_RESETN_RESET);
+			epl_sensor_I2C_Write(epld->client, 0x00, epl_sensor.wait | epl_sensor.mode);
+			mdelay(15);
+			epl_sensor_I2C_Write(epld->client, 0x11, EPL_POWER_ON | EPL_RESETN_RUN);  
+			epl_sensor_I2C_Write(epld->client,0x1b, EPL_CMP_RUN | EPL_UN_LOCK);      
+	
+			mdelay(30);			
+
+			epl_sensor_read_ps(epld->client);
+
+			epl_sensor.mode = old_mode;
+			
+			write_global_variable(epld->client);
+			epl_sensor_fast_update(epld->client);		
+			epl_sensor_I2C_Write(epld->client, 0x11, EPL_POWER_OFF | EPL_RESETN_RESET);
+			epl_sensor_I2C_Write(epld->client, 0x00, epl_sensor.wait | epl_sensor.mode);
+			mdelay(15);
+			epl_sensor_I2C_Write(epld->client,0x1b, EPL_CMP_RUN | EPL_UN_LOCK);
+			
+			epl_sensor_I2C_Write(epld->client, 0x11, EPL_POWER_ON | EPL_RESETN_RUN);
+			
+			mdelay(10);
+			epl_power_ctl(epld, false);
+
+			if (epl_sensor.ps.data.data > epld->min_psi +400)
+			{
+				ret = EPL_NEAR;
+			}
+			else
+			{
+				ret = EPL_FAR;
+			}
+
+			LOG_INFO("pocket mode ps value = %d,old_mod=0x%x\n", epl_sensor.ps.data.data, old_mode);
+		}
+		mutex_unlock(&epld->enable_mutex);
+	
+		return ret;
+	}
+
+	return ret;
+}
+
+EXPORT_SYMBOL_GPL(epl_detect_pocket);
 /*----------------------------------------------------------------------------*/
 static int epl_sensor_probe(struct i2c_client *client,const struct i2c_device_id *id)
 {
@@ -4768,6 +4864,8 @@ static int epl_sensor_probe(struct i2c_client *client,const struct i2c_device_id
     INIT_DELAYED_WORK(&epld->dynk_thd_polling_work, epl_sensor_dynk_thd_polling_work);
 #endif
     mutex_init(&sensor_mutex);
+    mutex_init(&epld->enable_mutex);
+    epld->near_far_stat = -1;
 
     //initial global variable and write to senosr
     initial_global_variable(client, epld);

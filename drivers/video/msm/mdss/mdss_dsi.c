@@ -2302,10 +2302,10 @@ int dsi_panel_device_register(struct device_node *pan_node,
 
 	
 	//[feature]-ADD-BEGIN by BKL bring up wanying.chen@tcl.com,2015/6/24
-	//#if defined(JRD_PROJECT_POP45C) || defined(JRD_PROJECT_PIXI3454GSPR) || defined(JRD_PROJECT_POP455C) || defined(JRD_PROJECT_POP45) || defined(JRD_PROJECT_PIXI445SPR) || defined(JRD_PROJECT_GOPLAY2) || defined (JRD_PROJECT_POP455CTMO) || defined (JRD_PROJECT_PIXI445CRICKET)|| defined(JRD_PROJECT_PIXI4554G)
+	#if defined(JRD_PROJECT_POP45C) || defined(JRD_PROJECT_PIXI3454GSPR) || defined(JRD_PROJECT_POP455C) || defined(JRD_PROJECT_POP45) || defined(JRD_PROJECT_PIXI445SPR) || defined(JRD_PROJECT_GOPLAY2) || defined (JRD_PROJECT_POP455CTMO) || defined (JRD_PROJECT_PIXI445CRICKET)|| defined(JRD_PROJECT_PIXI4554G)
 	if (mdss_dsi_pinctrl_set_state(ctrl_pdata, true))
 		pr_err("reset enable: pinctrl not enabled\n");
-	//#endif
+	#endif
 	//[feature]-ADD-end by BKL bring up wanying.chen@tcl.com,2015/6/24
 	if (pinfo->cont_splash_enabled) {
 		rc = mdss_dsi_panel_power_ctrl(&(ctrl_pdata->panel_data),

@@ -467,6 +467,8 @@ static irqreturn_t fts_ts_interrupt(int irq, void *dev_id)
 	return IRQ_HANDLED;
 }
 
+extern int stk_detect_pocket(void);
+
 /*******************************************************************************
 *  Name: fts_read_Touchdata
 *  Brief:
@@ -487,8 +489,14 @@ static int fts_read_Touchdata(struct fts_ts_data *data)
 			fts_read_reg(data->client, 0xd0, &state);
 			   if(state ==1)
 			   {
-				  fts_read_Gestruedata();
-			   return 1;
+				if (stk_detect_pocket()) {
+					fts_read_Gestruedata();
+				}
+				else {
+					printk("[FTS] : detect in pocket, gesture wake up abort\n");
+				}
+		
+			   	return 1;
 			  }
 		}
 	}
@@ -1111,7 +1119,7 @@ static int fts_ts_stop(struct device *dev)
 			FTS_DBG(" enable_irq.. \n");
 		}
 		*/
-         fts_write_reg(fts_i2c_client, 0xd0, 0x01);
+         	fts_write_reg(fts_i2c_client, 0xd0, 0x01);
 		  if (fts_updateinfo_curr.CHIP_ID==0x54 || fts_updateinfo_curr.CHIP_ID==0x58 || fts_updateinfo_curr.CHIP_ID==0x86)
 		  {
 		  	fts_write_reg(fts_i2c_client, 0xd1, 0xff);

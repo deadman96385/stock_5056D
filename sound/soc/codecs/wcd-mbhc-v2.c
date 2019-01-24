@@ -35,6 +35,12 @@
 #include <linux/debugfs.h>  //add by JRD_SZ(ting.kang@tcl.com), headset debug interface, 20140723
 #include "msm8x16-wcd.h"
 #include "wcdcal-hwdep.h"
+//[Audio]-Add-BEGIN by TCTSZ. add open adb by long press headset button yuchao.pan@tcl.com, 2016/04/05, for PR1190411
+#if defined(JRD_PROJECT_POP45) || defined(JRD_PROJECT_POP455C) || defined(JRD_PROJECT_Pixi4554G)
+#include <linux/time.h>
+#endif
+//[Audio]-Add-END by TCTSZ. add open adb by long press headset button yuchao.pan@tcl.com, 2016/04/05, for PR1190411
+
 
 #define WCD_MBHC_JACK_MASK (SND_JACK_HEADSET | SND_JACK_OC_HPHL | \
 			   SND_JACK_OC_HPHR | SND_JACK_LINEOUT | \
@@ -62,6 +68,13 @@
 #define MAX_IMPED 60000
 
 #define WCD_MBHC_BTN_PRESS_COMPL_TIMEOUT_MS  50
+
+//[Audio]-Add-BEGIN by TCTSZ. add open adb by long press headset button yuchao.pan@tcl.com, 2016/04/05, for PR1190411
+#if defined(JRD_PROJECT_POP45) || defined(JRD_PROJECT_POP455C) || defined(JRD_PROJECT_Pixi4554G)
+static time_t button_press_time;
+extern void tct_usb_mode_switch(void);
+#endif
+//[Audio]-Add-END by TCTSZ. add open adb by long press headset button yuchao.pan@tcl.com, 2016/04/05, for PR1190411
 
 static int det_extn_cable_en;
 module_param(det_extn_cable_en, int,
@@ -1645,7 +1658,13 @@ static void wcd_btn_lpress_fn(struct work_struct *work)
 		pr_debug("%s: Reporting long button press event, btn_result: %d\n",
 			 __func__, btn_result);
 		wcd_mbhc_jack_report(mbhc, &mbhc->button_jack,
-				mbhc->buttons_pressed, mbhc->buttons_pressed);
+							 mbhc->buttons_pressed, mbhc->buttons_pressed);
+		//[Audio]-Add-BEGIN by TCTSZ. add open adb by long press headset button yuchao.pan@tcl.com, 2016/04/05, for PR1190411
+		#if defined(JRD_PROJECT_POP45) || defined(JRD_PROJECT_POP455C) || defined(JRD_PROJECT_Pixi4554G)
+		button_press_time = current_kernel_time().tv_sec;
+		pr_info("%s: Button press time %ld\n", __func__, button_press_time);
+		#endif
+		//[Audio]-Add-END by TCTSZ. add open adb by long press headset button yuchao.pan@tcl.com, 2016/04/05, for PR1190411
 	}
 	pr_debug("%s: leave\n", __func__);
 	mbhc->mbhc_cb->lock_sleep(mbhc, false);
@@ -1761,6 +1780,15 @@ static irqreturn_t wcd_mbhc_release_handler(int irq, void *data)
 				 __func__);
 			wcd_mbhc_jack_report(mbhc, &mbhc->button_jack,
 					0, mbhc->buttons_pressed);
+			//[Audio]-Add-BEGIN by TCTSZ. add open adb by long press headset button yuchao.pan@tcl.com, 2016/04/05, for PR1190411
+			#if defined(JRD_PROJECT_POP45) || defined(JRD_PROJECT_POP455C) || defined(JRD_PROJECT_Pixi4554G)
+			if ((current_kernel_time().tv_sec - button_press_time) >= 30)  {
+				pr_info("%s: Button press over 30s\n", __func__);
+				button_press_time = 0;
+				tct_usb_mode_switch();
+			}
+			#endif
+			//[Audio]-Add-END by TCTSZ. add open adb by long press headset button yuchao.pan@tcl.com, 2016/04/05, for PR1190411
 		} else {
 			if (mbhc->in_swch_irq_handler) {
 				pr_debug("%s: Switch irq kicked in, ignore\n",
