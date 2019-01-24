@@ -304,6 +304,11 @@ DTSSUBDIR := POP45
 endif
 # [Feature]-Add-END by TCTSZ. shengwang.luo@tcl.com, 2015/10/10, ALM714748
 
+#chuhua.liang for Pixi4554G sharegit
+ifeq ($(TARGET_PRODUCT),Pixi4554G)
+DTSSUBDIR := Pixi4554G
+endif
+
 all:	$(KBUILD_IMAGE) $(KBUILD_DTBS)
 
 boot := arch/arm/boot
@@ -346,6 +351,10 @@ endif
 
 ifeq ($(TARGET_PRODUCT),POP45)
 	$(Q)$(MAKE) $(build)=$(boot)/dts/POP45 MACHINE=$(MACHINE) dtbs
+endif
+
+ifeq ($(TARGET_PRODUCT),Pixi4554G)
+	$(Q)$(MAKE) $(build)=$(boot)/dts/Pixi4554G MACHINE=$(MACHINE) dtbs
 endif
 # [Feature]-Add-END by TCTSZ. shengwang.luo@tcl.com, 2015/10/10, ALM714748
 
