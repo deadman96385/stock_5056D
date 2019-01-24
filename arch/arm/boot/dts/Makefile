@@ -252,6 +252,11 @@ ifeq ($(TARGET_PRODUCT),Pixi464G)
 subdir- := Pixi464G
 endif
 
+#chuhua.liang for GOPLAY2 sharegit.
+ifeq ($(TARGET_PRODUCT),GOPLAY2)
+subdir- := GOPLAY2
+endif
+
 # *.dtb used to be generated in the directory above. Clean out the
 # old build results so people don't accidentally use them.
 dtbs: $(addprefix $(obj)/, $(DTB_LIST))

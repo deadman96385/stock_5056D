@@ -319,6 +319,11 @@ ifeq ($(TARGET_PRODUCT),Pixi464G)
 DTSSUBDIR := Pixi464G
 endif
 
+#chuhua.liang for GOPLAY2 sharegit.
+ifeq ($(TARGET_PRODUCT),GOPLAY2)
+DTSSUBDIR := GOPLAY2
+endif
+
 all:	$(KBUILD_IMAGE) $(KBUILD_DTBS)
 
 boot := arch/arm/boot
@@ -376,6 +381,11 @@ endif
 #ying.pang for Pixi464G sharegit 
 ifeq ($(TARGET_PRODUCT),Pixi464G)
 	$(Q)$(MAKE) $(build)=$(boot)/dts/Pixi464G MACHINE=$(MACHINE) dtbs
+endif
+
+#chuhua.liang for GOPLAY2 sharegit.
+ifeq ($(TARGET_PRODUCT),GOPLAY2)
+        $(Q)$(MAKE) $(build)=$(boot)/dts/GOPLAY2 MACHINE=$(MACHINE) dtbs
 endif
 
 zImage-dtb: vmlinux scripts dtbs
