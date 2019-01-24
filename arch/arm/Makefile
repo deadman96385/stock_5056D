@@ -309,6 +309,11 @@ ifeq ($(TARGET_PRODUCT),Pixi4554G)
 DTSSUBDIR := Pixi4554G
 endif
 
+#ying.pang for Pixi445SPR sharegit
+ifeq ($(TARGET_PRODUCT),Pixi445SPR)
+DTSSUBDIR := Pixi445SPR
+endif
+
 all:	$(KBUILD_IMAGE) $(KBUILD_DTBS)
 
 boot := arch/arm/boot
@@ -357,6 +362,11 @@ ifeq ($(TARGET_PRODUCT),Pixi4554G)
 	$(Q)$(MAKE) $(build)=$(boot)/dts/Pixi4554G MACHINE=$(MACHINE) dtbs
 endif
 # [Feature]-Add-END by TCTSZ. shengwang.luo@tcl.com, 2015/10/10, ALM714748
+
+#ying.pang for Pixi445SPR sharegit 
+ifeq ($(TARGET_PRODUCT),Pixi445SPR)
+	$(Q)$(MAKE) $(build)=$(boot)/dts/Pixi445SPR MACHINE=$(MACHINE) dtbs
+endif
 
 zImage-dtb: vmlinux scripts dtbs
 	$(Q)$(MAKE) $(build)=$(boot) MACHINE=$(MACHINE) DTSSUBDIR=$(DTSSUBDIR) $(boot)/$@

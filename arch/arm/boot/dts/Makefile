@@ -242,6 +242,11 @@ subdir- := Pixi4554G
 endif
 #[Feature]-Add END by TCTSZ. shengwang.luo@tcl.com, 2015/10/10, ALM714748
 
+#ying.pang for Pixi445SPR sharegit 
+ifeq ($(TARGET_PRODUCT),Pixi445SPR)
+subdir- := Pixi445SPR
+endif
+
 # *.dtb used to be generated in the directory above. Clean out the
 # old build results so people don't accidentally use them.
 dtbs: $(addprefix $(obj)/, $(DTB_LIST))
