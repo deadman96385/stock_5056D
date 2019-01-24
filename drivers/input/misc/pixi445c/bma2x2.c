@@ -32,7 +32,6 @@
 #include <linux/regulator/consumer.h>
 #include <linux/of_gpio.h>
 #include <linux/sensors.h>
-#include <linux/kthread.h>
 
 #ifdef CONFIG_HAS_EARLYSUSPEND
 #include <linux/earlysuspend.h>
@@ -53,7 +52,7 @@
 #include "bstclass.h"
 
 #define ACC_NAME  "ACC"
-#define BMA2X2_ENABLE_INT1
+//#define BMA2X2_ENABLE_INT1
 
 #ifdef ENABLE_ISR_DEBUG_MSG
 #define ISR_INFO(dev, fmt, arg...) dev_info(dev, fmt, ##arg)
@@ -61,7 +60,7 @@
 #define ISR_INFO(dev, fmt, arg...)
 #endif
 
-#define BMA2X2_SENSOR_IDENTIFICATION_ENABLE
+//#define BMA2X2_SENSOR_IDENTIFICATION_ENABLE
 
 #define SENSOR_NAME                 "bma2x2-accel"
 #define ABSMIN                      -512
@@ -89,7 +88,6 @@
 /* wait 10ms for self test  done */
 #define SELF_TEST_DELAY()           usleep_range(10000, 15000)
 
-#ifdef USE_BMA_INTERRUPT
 #define LOW_G_INTERRUPT             REL_Z
 #define HIGH_G_INTERRUPT            REL_HWHEEL
 #define SLOP_INTERRUPT              REL_DIAL
@@ -98,17 +96,6 @@
 #define ORIENT_INTERRUPT            ABS_PRESSURE
 #define FLAT_INTERRUPT              ABS_DISTANCE
 #define SLOW_NO_MOTION_INTERRUPT    REL_Y
-#else
-/* AndroidM didn't use the dev-interrupt,bypass above defines */
-#define LOW_G_INTERRUPT             REL_Z
-#define HIGH_G_INTERRUPT            REL_Z
-#define SLOP_INTERRUPT              REL_Z
-#define DOUBLE_TAP_INTERRUPT        REL_Z
-#define SINGLE_TAP_INTERRUPT        REL_Z
-#define ORIENT_INTERRUPT            REL_Z
-#define FLAT_INTERRUPT              REL_Z
-#define SLOW_NO_MOTION_INTERRUPT    REL_Z
-#endif
 
 #define HIGH_G_INTERRUPT_X_HAPPENED                 1
 #define HIGH_G_INTERRUPT_Y_HAPPENED                 2
@@ -1405,9 +1392,7 @@ static const struct interrupt_map_t int_map[] = {
 #define POLL_INTERVAL_MIN_MS	10
 #define POLL_INTERVAL_MAX_MS	4000
 #define POLL_DEFAULT_INTERVAL_MS 200
-//[Del]-Add-BEGIN by TCTSZ.for G-sensor timestamp baili.ouyang.sz@tcl.com, 2015/11/5, for PR390145
-//#define POLL_MS_100HZ 10
-//[Del]-Add-END by TCTSZ.baili.ouyang.sz@tcl.com, 2015/11/5, for PR390145
+
 /* Interrupt delay in msecs */
 #define BMA_INT_MAX_DELAY	64
 
@@ -1487,7 +1472,6 @@ struct bma2x2_platform_data {
 	s8 place;
 	bool int_en;
 	bool use_int2; /* Use interrupt pin2 */
-	bool use_hrtimer;
 };
 
 struct bma2x2_suspend_state {
@@ -1515,23 +1499,16 @@ struct bma2x2_data {
 	unsigned char mode;
 	signed char sensor_type;
 	struct input_dev *input;
+
 	struct bst_dev *bst_acc;
 
 	struct bma2x2acc value;
 	struct mutex value_mutex;
 	struct mutex enable_mutex;
 	struct mutex mode_mutex;
-//[Del]-Add-BEGIN by TCTSZ.for G-sensor timestamp baili.ouyang.sz@tcl.com, 2015/11/5, for PR390145
-//	struct mutex op_lock;
 	struct workqueue_struct *data_wq;
 	struct delayed_work work;
 	struct work_struct irq_work;
-	struct hrtimer accel_timer;
-//	int accel_wkp_flag;
-//	struct task_struct *accel_task;
-//	bool accel_delay_change;
-//	wait_queue_head_t accel_wq;
-//[Del]-Add-END by TCTSZ.baili.ouyang.sz@tcl.com, 2015/11/5, for PR390145
 	struct regulator *vdd;
 	struct regulator *vio;
 	bool power_enabled;
@@ -5028,24 +5005,26 @@ static int bma2x2_read_accel_xyz(struct i2c_client *client,
 #endif
 
 	bma2x2_remap_sensor_data(acc, client_data);
+	acc->x = acc->x << BMA2X2_RANGE_SHIFT;
+	acc->y = acc->y << BMA2X2_RANGE_SHIFT;
+	acc->z = acc->z << BMA2X2_RANGE_SHIFT;
 	return comres;
 }
-//[Del]-Add-BEGIN by TCTSZ.for G-sensor timestamp baili.ouyang.sz@tcl.com, 2015/11/5, for PR390145
+
 static void bma2x2_report_axis_data(struct bma2x2_data *bma2x2,
 			struct bma2x2acc *value)
 {
 	ktime_t ts;
-//	int err;
+	int err;
 
 	ts = ktime_get_boottime();
-//	err = bma2x2_read_accel_xyz(bma2x2->bma2x2_client,
-//			bma2x2->sensor_type, value);
-//	if (err < 0) {
-//		dev_err(&bma2x2->bma2x2_client->dev,
-//			"read accel data failed! err = %d\n", err);
-//		return;
-//	}
-
+	err = bma2x2_read_accel_xyz(bma2x2->bma2x2_client,
+			bma2x2->sensor_type, value);
+	if (err < 0) {
+		dev_err(&bma2x2->bma2x2_client->dev,
+			"read accel data failed! err = %d\n", err);
+		return;
+	}
 	input_report_abs(bma2x2->input, ABS_X,
 			(int)value->x << bma2x2->sensitivity);
 	input_report_abs(bma2x2->input, ABS_Y,
@@ -5057,102 +5036,22 @@ static void bma2x2_report_axis_data(struct bma2x2_data *bma2x2,
 	input_event(bma2x2->input, EV_SYN, SYN_TIME_NSEC,
 			ktime_to_timespec(ts).tv_nsec);
 	input_sync(bma2x2->input);
-	
 }
-//[Del]-Add-END by TCTSZ.baili.ouyang.sz@tcl.com, 2015/11/5, for PR390145
-//[Del]-Add-BEGIN by TCTSZ.for G-sensor timestamp baili.ouyang.sz@tcl.com, 2015/11/5, for PR390145
-static void bma2x2_poll_work(struct work_struct *work)
-{
-	struct bma2x2_data *bma2x2 = container_of((struct delayed_work *)work,
-			struct bma2x2_data, work);
-	struct bma2x2acc value;
-	unsigned long delay = msecs_to_jiffies(atomic_read(&bma2x2->delay));
-	int err;	
-	err = bma2x2_read_accel_xyz(bma2x2->bma2x2_client,
-			bma2x2->sensor_type, &value);
-	if (err < 0) {
-			dev_err(&bma2x2->bma2x2_client->dev,"read accel data failed! err = %d\n", err);
-		}
-	mutex_lock(&bma2x2->value_mutex);
-	bma2x2->value = value;
-	mutex_unlock(&bma2x2->value_mutex);
-	//queue_work(bma2x2->data_wq, &bma2x2->irq_work);
-	queue_delayed_work(bma2x2->data_wq, &bma2x2->work, delay);
-}
-//[Del]-Add-END by TCTSZ.baili.ouyang.sz@tcl.com, 2015/11/5, for PR390145
+
 static void bma2x2_work_func(struct work_struct *work)
 {
 	struct bma2x2_data *bma2x2 = container_of((struct delayed_work *)work,
 			struct bma2x2_data, work);
 	struct bma2x2acc value;
 	unsigned long delay = msecs_to_jiffies(atomic_read(&bma2x2->delay));
-	
+
 	bma2x2_report_axis_data(bma2x2, &value);
-	
 	mutex_lock(&bma2x2->value_mutex);
 	bma2x2->value = value;
 	mutex_unlock(&bma2x2->value_mutex);
 	queue_delayed_work(bma2x2->data_wq, &bma2x2->work, delay);
 }
-//[Del]-Add-BEGIN by TCTSZ.for G-sensor timestamp baili.ouyang.sz@tcl.com, 2015/11/5, for PR390145
-static enum hrtimer_restart accel_timer_handle(struct hrtimer *hrtimer)
-{
-	struct bma2x2_data *bma2x2;
-	ktime_t ktime;
 
-	bma2x2 = container_of(hrtimer, struct bma2x2_data, accel_timer);
-//	queue_work(bma2x2->data_wq, &bma2x2->irq_work);
-	bma2x2_report_axis_data(bma2x2, &bma2x2->value);
-	ktime = ktime_set(0, atomic_read(&bma2x2->delay) * NSEC_PER_MSEC);
-	hrtimer_forward_now(&bma2x2->accel_timer, ktime);
-//	bma2x2->accel_wkp_flag = 1;
-//	wake_up_interruptible(&bma2x2->accel_wq);
-	return HRTIMER_RESTART;
-}
-//[Del]-Add-END by TCTSZ.baili.ouyang.sz@tcl.com, 2015/11/5, for PR390145
-//[Del]-Add-BEGIN by TCTSZ.for G-sensor timestamp baili.ouyang.sz@tcl.com, 2015/11/5, for PR390145
-/*static int accel_poll_thread(void *data)
-{
-	struct bma2x2_data *bma2x2 = data;
-	struct bma2x2acc value;
-	int err;
-
-	while (1) {
-		wait_event_interruptible(bma2x2->accel_wq,
-			((bma2x2->accel_wkp_flag != 0) ||
-				kthread_should_stop()));
-		bma2x2->accel_wkp_flag = 0;
-		if (kthread_should_stop())
-			break;
-
-		mutex_lock(&bma2x2->op_lock);
-		if (bma2x2->accel_delay_change) {
-			if (atomic_read(&bma2x2->delay) <= POLL_MS_100HZ)
-				set_wake_up_idle(true);
-			else
-				set_wake_up_idle(false);
-			bma2x2->accel_delay_change = false;
-		}
-		mutex_unlock(&bma2x2->op_lock);
-		err = bma2x2_read_accel_xyz(bma2x2->bma2x2_client,
-			bma2x2->sensor_type, &value);
-		if (err < 0) {
-			dev_err(&bma2x2->bma2x2_client->dev,
-			"read accel data failed! err = %d\n", err);
-//			return err;
-		}
-		
-
-		//bma2x2_report_axis_data(bma2x2, &value);
-		mutex_lock(&bma2x2->value_mutex);
-		bma2x2->value = value;
-		mutex_unlock(&bma2x2->value_mutex);
-			
-	}
-
-	return 0;
-}*/
-//[Del]-Add-END by TCTSZ.baili.ouyang.sz@tcl.com, 2015/11/5, for PR390145
 static ssize_t bma2x2_register_store(struct device *dev,
 		struct device_attribute *attr,
 		const char *buf, size_t count)
@@ -5451,8 +5350,6 @@ static void bma2x2_set_enable(struct device *dev, int enable)
 	struct i2c_client *client = to_i2c_client(dev);
 	struct bma2x2_data *bma2x2 = i2c_get_clientdata(client);
 	int pre_enable = atomic_read(&bma2x2->enable);
-	ktime_t ktime;
-	int delay_ms;
 
 	if (atomic_read(&bma2x2->cal_status)) {
 		dev_err(dev, "can not enable or disable when calibration\n");
@@ -5487,21 +5384,10 @@ static void bma2x2_set_enable(struct device *dev, int enable)
 				bma2x2_pinctrl_state(bma2x2, true);
 				enable_irq(bma2x2->IRQ);
 			} else {
-				if (!bma2x2->pdata->use_hrtimer) {
-					delay_ms = atomic_read(&bma2x2->delay);
-					queue_delayed_work(bma2x2->data_wq,
-						&bma2x2->work,
-						msecs_to_jiffies(delay_ms));
-				} else {
-//[Del]-Add-BEGIN by TCTSZ.for G-sensor timestamp baili.ouyang.sz@tcl.com, 2015/11/5, for PR390145
-					queue_delayed_work(bma2x2->data_wq, &bma2x2->work,msecs_to_jiffies(delay_ms));
-					ktime = ktime_set(0,
-						atomic_read(&bma2x2->delay)
-						* NSEC_PER_MSEC);
-					hrtimer_start(&bma2x2->accel_timer,
-						ktime, HRTIMER_MODE_REL);
-					
-				}
+				queue_delayed_work(bma2x2->data_wq,
+					&bma2x2->work,
+					msecs_to_jiffies
+					(atomic_read(&bma2x2->delay)));
 			}
 			atomic_set(&bma2x2->enable, 1);
 		}
@@ -5532,13 +5418,9 @@ static void bma2x2_set_enable(struct device *dev, int enable)
 					goto mutex_exit;
 				}
 			} else {
-			if (!bma2x2->pdata->use_hrtimer)
-				cancel_delayed_work_sync(&bma2x2->work);
-			else
-				hrtimer_cancel(&bma2x2->accel_timer);
 				cancel_delayed_work_sync(&bma2x2->work);
 			}
-//[Del]-Add-END by TCTSZ.baili.ouyang.sz@tcl.com, 2015/11/5, for PR390145
+
 			atomic_set(&bma2x2->enable, 0);
 			if (bma2x2_power_ctl(bma2x2, false)) {
 				dev_err(dev, "power failed\n");
@@ -7503,8 +7385,6 @@ static int bma2x2_parse_dt(struct device *dev,
 
 	pdata->use_int2 = of_property_read_bool(np, "bosch,use-int2");
 
-	pdata->use_hrtimer = of_property_read_bool(np, "bosch,use-hrtimer");
-
 	pdata->gpio_int1 = of_get_named_gpio_flags(dev->of_node,
 				"bosch,gpio-int1", 0, &pdata->int1_flag);
 
@@ -7556,13 +7436,11 @@ static void bma2x2_sig_motion_disable(struct bma2x2_data *data)
 	return;
 }
 #endif
-//[Del]-Add-BEGIN by TCTSZ.for G-sensor timestamp baili.ouyang.sz@tcl.com, 2015/11/5, for PR390145
+
 static int bma2x2_open_init(struct i2c_client *client,
 			struct bma2x2_data *data)
 {
 	int err;
-	
-//	data->value.x=data->value.y=data->value.z=0;
 	err = bma2x2_set_bandwidth(client, data->bandwidth);
 	if (err < 0) {
 		dev_err(&client->dev, "init bandwidth error\n");
@@ -7575,7 +7453,6 @@ static int bma2x2_open_init(struct i2c_client *client,
 	}
 	return 0;
 }
-//[Del]-Add-END by TCTSZ.baili.ouyang.sz@tcl.com, 2015/11/5, for PR390145
 
 static int bma2x2_get_interrupt_gpio(const struct bma2x2_data *data,
 			const unsigned int gpio)
@@ -7763,9 +7640,6 @@ static int bma2x2_probe(struct i2c_client *client,
 	mutex_init(&data->value_mutex);
 	mutex_init(&data->mode_mutex);
 	mutex_init(&data->enable_mutex);
-//[Del]-Add-BEGIN by TCTSZ.for G-sensor timestamp baili.ouyang.sz@tcl.com, 2015/11/5, for PR390145	
-//	mutex_init(&data->op_lock);
-//[Del]-Add-END by TCTSZ.baili.ouyang.sz@tcl.com, 2015/11/5, for PR390145
 	data->bandwidth = BMA2X2_BW_SET;
 	data->range = BMA2X2_RANGE_SET;
 	data->sensitivity = bosch_sensor_range_map[0];
@@ -7830,22 +7704,7 @@ static int bma2x2_probe(struct i2c_client *client,
 		disable_irq(data->IRQ);
 		INIT_WORK(&data->irq_work, bma2x2_irq_work_func);
 	} else {
-		if (!pdata->use_hrtimer) {
-			INIT_DELAYED_WORK(&data->work, bma2x2_work_func);
-		} else {
-//[Del]-Add-BEGIN by TCTSZ.for G-sensor timestamp baili.ouyang.sz@tcl.com, 2015/11/5, for PR390145	
-			hrtimer_init(&data->accel_timer,
-					CLOCK_BOOTTIME, HRTIMER_MODE_REL);
-
-			data->accel_timer.function = accel_timer_handle;
-
-//			init_waitqueue_head(&data->accel_wq);
-			INIT_DELAYED_WORK(&data->work, bma2x2_poll_work);
-//			data->accel_wkp_flag = 0;
-//			data->accel_task = kthread_run(accel_poll_thread, data,
-//				"bma_accel");
-//[Del]-Add-END by TCTSZ.baili.ouyang.sz@tcl.com, 2015/11/5, for PR390145
-		}
+		INIT_DELAYED_WORK(&data->work, bma2x2_work_func);
 	}
 
 	data->data_wq = create_freezable_workqueue("bma2x2_data_work");
@@ -8094,16 +7953,9 @@ free_g_sensor_dev_exit:
 destroy_g_sensor_class_exit:
 	class_destroy(data->g_sensor_class);
 #endif
-//[Del]-Add-BEGIN by TCTSZ.for G-sensor timestamp baili.ouyang.sz@tcl.com, 2015/11/5, for PR390145
+
 destroy_workqueue_exit:
-	if (!pdata->use_hrtimer) {
-		destroy_workqueue(data->data_wq);
-	} else {
-		hrtimer_cancel(&data->accel_timer);
-//		kthread_stop(data->accel_task);
-		destroy_workqueue(data->data_wq);
-	}
-//[Del]-Add-END by TCTSZ.baili.ouyang.sz@tcl.com, 2015/11/5, for PR390145
+	destroy_workqueue(data->data_wq);
 free_irq_exit:
 free_interrupt_gpio:
 	if (pdata->int_en) {
@@ -8130,7 +7982,7 @@ kfree_exit:
 exit:
 	return err;
 }
-//[Del]-Add-BEGIN by TCTSZ.for G-sensor timestamp baili.ouyang.sz@tcl.com, 2015/11/5, for PR390145
+
 #ifdef CONFIG_HAS_EARLYSUSPEND
 static void bma2x2_early_suspend(struct early_suspend *h)
 {
@@ -8140,18 +7992,12 @@ static void bma2x2_early_suspend(struct early_suspend *h)
 	mutex_lock(&data->enable_mutex);
 	if (atomic_read(&data->enable) == 1) {
 		bma2x2_set_mode(data->bma2x2_client, BMA2X2_MODE_SUSPEND);
-		if (!data->pdata->int_en) {
-			if (!data->pdata->use_hrtimer)
-				cancel_delayed_work_sync(&data->work);
-			else
-				hrtimer_cancel(&data->accel_timer);
-				cancel_delayed_work_sync(&data->work);
-		}
+		if (!data->pdata->int_en)
+			cancel_delayed_work_sync(&data->work);
 	}
 	mutex_unlock(&data->enable_mutex);
 }
-//[Del]-Add-END by TCTSZ.baili.ouyang.sz@tcl.com, 2015/11/5, for PR390145
-//[Del]-Add-BEGIN by TCTSZ.for G-sensor timestamp baili.ouyang.sz@tcl.com, 2015/11/5, for PR390145
+
 static void bma2x2_late_resume(struct early_suspend *h)
 {
 	struct bma2x2_data *data =
@@ -8160,26 +8006,15 @@ static void bma2x2_late_resume(struct early_suspend *h)
 	mutex_lock(&data->enable_mutex);
 	if (atomic_read(&data->enable) == 1) {
 		bma2x2_set_mode(data->bma2x2_client, BMA2X2_MODE_NORMAL);
-		if (!data->pdata->int_en) {
-			if (!data->pdata->use_hrtimer) {
-				queue_delayed_work(data->data_wq,
+		if (!data->pdata->int_en)
+			queue_delayed_work(data->data_wq,
 				&data->work,
 				msecs_to_jiffies(atomic_read(&data->delay)));
-			} else {
-				queue_delayed_work(data->data_wq, &data->work,msecs_to_jiffies(atomic_read(&data->delay)));
-				ktime = ktime_set(0,
-				atomic_read(&data->delay) * NSEC_PER_MSEC);
-				hrtimer_start(&data->accle_timer,
-						ktime, HRTIMER_MODE_REL);
-				
-			}
-		}
 	}
 	mutex_unlock(&data->enable_mutex);
 }
 #endif
-//[Del]-Add-END by TCTSZ.baili.ouyang.sz@tcl.com, 2015/11/5, for PR390145
-//[Del]-Add-BEGIN by TCTSZ.for G-sensor timestamp baili.ouyang.sz@tcl.com, 2015/11/5, for PR390145
+
 static int bma2x2_remove(struct i2c_client *client)
 {
 	struct bma2x2_data *data = i2c_get_clientdata(client);
@@ -8202,14 +8037,8 @@ static int bma2x2_remove(struct i2c_client *client)
 		sysfs_remove_group(&data->input->dev.kobj,
 				&bma2x2_attribute_group);
 
+	destroy_workqueue(data->data_wq);
 	bma2x2_set_enable(&client->dev, 0);
-	if (!data->pdata->use_hrtimer) {
-		destroy_workqueue(data->data_wq);
-	} else {
-		hrtimer_cancel(&data->accel_timer);
-//		kthread_stop(data->accel_task);
-		destroy_workqueue(data->data_wq);
-	}
 	bma2x2_power_deinit(data);
 	i2c_set_clientdata(client, NULL);
 	if (data->pdata && (client->dev.of_node))
@@ -8220,7 +8049,7 @@ static int bma2x2_remove(struct i2c_client *client)
 
 	return 0;
 }
-//[Del]-Add-END by TCTSZ.baili.ouyang.sz@tcl.com, 2015/11/5, for PR390145
+
 void bma2x2_shutdown(struct i2c_client *client)
 {
 	struct bma2x2_data *data = i2c_get_clientdata(client);
