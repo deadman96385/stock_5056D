@@ -282,6 +282,12 @@ endif
 
 DTSSUBDIR := qcom
 
+# [Feature]-Add-BEGIN by TCTSZ. Add DTS project shengwang.luo@tcl.com, 2015/10/10, ALM714748
+ifeq ($(TARGET_PRODUCT),POP45C)
+DTSSUBDIR := POP45C
+endif
+# [Feature]-Add-END by TCTSZ. shengwang.luo@tcl.com, 2015/10/10, ALM714748
+
 all:	$(KBUILD_IMAGE) $(KBUILD_DTBS)
 
 boot := arch/arm/boot
@@ -304,6 +310,12 @@ zinstall uinstall install: vmlinux
 dtbs: scripts
 	$(Q)$(MAKE) $(build)=$(boot)/dts MACHINE=$(MACHINE) dtbs
 	$(foreach DIR, $(DTSSUBDIR), $(Q)$(MAKE) $(build)=$(boot)/dts/$(DIR) MACHINE=$(MACHINE) dtbs)
+
+# [Feature]-Add-BEGIN by TCTSZ. add DTS project shengwang.luo@tcl.com, 2015/10/10, ALM714748
+ifeq ($(TARGET_PRODUCT),POP45C)
+	$(Q)$(MAKE) $(build)=$(boot)/dts/POP45C MACHINE=$(MACHINE) dtbs
+endif
+# [Feature]-Add-END by TCTSZ. shengwang.luo@tcl.com, 2015/10/10, ALM714748
 
 zImage-dtb: vmlinux scripts dtbs
 	$(Q)$(MAKE) $(build)=$(boot) MACHINE=$(MACHINE) DTSSUBDIR=$(DTSSUBDIR) $(boot)/$@
