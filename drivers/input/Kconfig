@@ -218,6 +218,14 @@ config PRESSURE_BMP280
          is like a switch. For example, lid.
 #yongzhong.cheng@tcl.com,task1401030,2016/1/12,enable pressure sensor
 
+#yongzhong.cheng@tcl.com,2016/4/12,defect 1938927,G-sensor and Gyro-sensor 2in1 bmi160
+config  G_GRYO_BMI160
+        bool "G and Gypo sensor 2in1"
+        depends on INPUT
+        ---help---
+         Say y here if you want to use this pressure sensor driver, it
+         is like a switch. For example, lid.
+#yongzhong.cheng@tcl.com,2016/4/12,defect 1938927,G-sensor and Gyro-sensor 2in1 bmi160
 
 comment "Input Device Drivers"
 

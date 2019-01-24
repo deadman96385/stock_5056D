@@ -36,3 +36,8 @@ obj-$(CONFIG_GRYOSCOPE_BMG160)	+= bmg160/
 #yongzhong.cheng@tcl.com,task1401030,2016/1/12,enable pressure sensor
 obj-$(CONFIG_PRESSURE_BMP280)  += bmp280/
 #yongzhong.cheng@tcl.com,task1401030,2016/1/12,enable pressure sensor
+
+#yongzhong.cheng@tcl.com,2016/4/12,defect 1938927,G-sensor and Gyro-sensor 2in1 bmi160
+#obj-$(CONFIG_G_GRYO_BMI160)	+= bmi160/
+#yongzhong.cheng@tcl.com,2016/4/12,defect 1938927,G-sensor and Gyro-sensor 2in1 bmi160
+

@@ -588,6 +588,18 @@
 	};
 //[Feature]-END by TCTSZ.yongzhong.cheng@tcl.com, 2015/9/16,for 538697
 
+//yongzhong.cheng@tcl.com,2016/4/12,defect 1938927,G-sensor and Gyro-sensor 2in1 bmi160
+        bosch@68{
+                compatible = "bosch,bmi160";
+                reg = <0x68>;//SDO=GND
+                interrupt-parent = <&msm_gpio>;
+                interrupts = <11 0x2002>;
+		interrupts = <91 0x2002>;
+                vdd-supply = <&pm8909_l17>;
+                vio-supply = <&pm8909_l6>;
+        };
+//yongzhong.cheng@tcl.com,2016/4/12,defect 1938927,G-sensor and Gyro-sensor 2in1 bmi160
+
 	akm@c { // Magnetic field sensor
 		//compatible = "akm,akm09911";
 		compatible = "akm,akm0991x";

@@ -644,6 +644,10 @@ CONFIG_EMODE_GPIO=y
 CONFIG_GRYOSCOPE_BMG160=y
 #[Feature]-END by TCTSZ.yongzhong.cheng@tcl.com, 2015/8/26,for  538697
 
+#yongzhong.cheng@tcl.com,2016/4/12,defect 1938927,G-sensor and Gyro-sensor 2in1 bmi160
+CONFIG_G_GRYO_BMI160=y
+#yongzhong.cheng@tcl.com,2016/4/12,defect 1938927
+
 #[Feature] Add Begin by hong.lan@tcl.com for touchpanel driver pixiprime-5 4G 2016/09/01 PR:538578
 CONFIG_TOUCHSCREEN_GT615=n
 CONFIG_TOUCHSCREEN_FTS=n
