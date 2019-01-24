@@ -298,6 +298,10 @@ endif
 ifeq ($(TARGET_PRODUCT),Pixi3454GSPR)
 DTSSUBDIR := Pixi3454GSPR
 endif
+
+ifeq ($(TARGET_PRODUCT),POP45)
+DTSSUBDIR := POP45
+endif
 # [Feature]-Add-END by TCTSZ. shengwang.luo@tcl.com, 2015/10/10, ALM714748
 
 all:	$(KBUILD_IMAGE) $(KBUILD_DTBS)
@@ -338,6 +342,10 @@ endif
 
 ifeq ($(TARGET_PRODUCT),Pixi3454GSPR)
 	$(Q)$(MAKE) $(build)=$(boot)/dts/Pixi3454GSPR MACHINE=$(MACHINE) dtbs
+endif
+
+ifeq ($(TARGET_PRODUCT),POP45)
+	$(Q)$(MAKE) $(build)=$(boot)/dts/POP45 MACHINE=$(MACHINE) dtbs
 endif
 # [Feature]-Add-END by TCTSZ. shengwang.luo@tcl.com, 2015/10/10, ALM714748
 
