@@ -19,3 +19,7 @@ obj-$(CONFIG_GC0310_YUV_SHINETCH) += gc0310_yuv_shinetch.o
 
 obj-$(CONFIG_GC0310_SUNRISE) += gc0310_sunrise.o
 obj-$(CONFIG_SP0A20_SUNRISE) += sp0a20_sunrise.o
+
+#add by weicai.long@tcl.com
+obj-$(CONFIG_OV8858_OTP) += ov8858_otp.o
+#end add

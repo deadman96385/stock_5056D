@@ -18,6 +18,12 @@
 #include "msm_cci.h"
 #include "msm_camera_dt_util.h"
 
+//add by weicai.long@tcl.com
+#ifdef CONFIG_OV8858_OTP
+#include "ov8858_otp.h"
+#endif
+//SZ xuejian.zhong@tcl.com add 2016.03.07
+
 //Begin add by (TCTSZ) jin.xia@tcl.com for camera engineer mode, 2015-11-24
 #include "camera_tct_func.h"
 //End add
@@ -904,6 +910,32 @@ int32_t msm_sensor_driver_probe(void *setting,
 		pr_err("%s power up failed", slave_info->sensor_name);
 		goto free_camera_info;
 	}
+
+    //add by weicai.long@tcl.com, if mid is 0x06 and sensor name is not "ov8858_qtech",stop load not qtech driver.
+#ifdef CONFIG_OV8858_OTP
+    if(0x8858 == slave_info->sensor_id_info.sensor_id){
+        uint16_t mid = ov8858_otp_get_mid(s_ctrl);
+        if(OV8858_MID_QTECH == mid && strcmp(slave_info->sensor_name, "ov8858_qtech")){
+            pr_err("%s, driver=%s, stop load.\n", __func__, slave_info->sensor_name);
+            rc = -EINVAL;
+            goto camera_power_down;
+        }
+		//SZ xuejian.zhong@tcl.com add 2016.03.07
+		#if defined(JRD_PROJECT_PIXI464G) || defined(JRD_PROJECT_PIXI464GCRICKET)
+		else if(OV8858_MID_SUNNY != mid && 0 == strcmp(slave_info->sensor_name, "ov8858_sunny")){
+            pr_err("%s, driver=%s, stop load.\n", __func__, slave_info->sensor_name);
+            rc = -EINVAL;
+            goto camera_power_down;
+        }else if (OV8858_MID_SUNRISE != mid && 0 == strcmp(slave_info->sensor_name, "ov8858_sunrise")) {
+        	  pr_err("%s, driver=%s, stop load.\n", __func__, slave_info->sensor_name);
+            rc = -EINVAL;
+            goto camera_power_down;
+        }
+		#endif
+		//end
+
+    }
+#endif
 
 	pr_err("%s probe succeeded", slave_info->sensor_name);
 

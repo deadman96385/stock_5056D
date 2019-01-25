@@ -18,6 +18,10 @@
 #include <linux/regulator/rpm-smd-regulator.h>
 #include <linux/regulator/consumer.h>
 
+#ifdef CONFIG_OV8858_OTP
+#include "ov8858_otp.h"
+#endif
+
 #undef CDBG
 #define CDBG(fmt, args...) pr_debug(fmt, ##args)
 
@@ -590,6 +594,14 @@ static long msm_sensor_subdev_ioctl(struct v4l2_subdev *sd,
 	case MSM_SD_SHUTDOWN:
 		msm_sensor_stop_stream(s_ctrl);
 		return 0;
+    //add by weicai.long@tcl.com, otp feature.
+    case VIDIOC_MSM_OTP_CFG:
+#ifdef CONFIG_OV8858_OTP
+        if(0x8858 == s_ctrl->sensordata->slave_info->sensor_id){
+            ov8858_otp_config(s_ctrl);
+        }
+#endif
+		return 0
 	case MSM_SD_NOTIFY_FREEZE:
 		return 0;
 	default:

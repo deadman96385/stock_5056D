@@ -303,3 +303,9 @@ config SP0A20_SUNRISE
     depends on MSMB_CAMERA
     ---help---
       Superpix SP0A20 YUV sensor.
+
+config OV8858_OTP
+    bool "ov8858 sensor otp config"
+    depends on MSMB_CAMERA
+    ---help---
+      ov8858 sensor otp config.
