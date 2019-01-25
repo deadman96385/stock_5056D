@@ -272,6 +272,10 @@ static int32_t msm_sensor_get_dt_data(struct device_node *of_node,
 			goto FREE_GPIO_SET_TBL;
 		}
 	}
+//tct qiang.chen  add for camera module id pin 20151211 begin
+    sensordata->module_id_pin = of_get_named_gpio_flags(of_node,   "qcom,module-id-gpio", 0, NULL);
+    pr_err("%s camera module_id_pin =%d \n", __func__,sensordata->module_id_pin);
+//tct qiang.chen  add for camera module id pin 20151211 end 
 	rc = msm_sensor_get_dt_actuator_data(of_node,
 					     &sensordata->actuator_info);
 	if (rc < 0) {
