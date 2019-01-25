@@ -327,3 +327,9 @@ config OV8856_SUNNY_OTP
     depends on MSMB_CAMERA
     ---help---
       ov8856 sensor otp config.
+
+config S5K4H8_OTP
+    bool "s5k4h8 sensor otp config"
+    depends on MSMB_CAMERA
+    ---help---
+      s5k4h8 sensor otp config.
