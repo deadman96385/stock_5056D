@@ -12,4 +12,8 @@ obj-$(CONFIG_MSMB_CAMERA) += lm3642.o
 #add by weicai.long@tcl.com, flashlight driver.
 obj-$(CONFIG_MSMB_CAMERA) += tct_rear_front_led_trigger.o
 obj-$(CONFIG_MSMB_CAMERA) += tct_rear_front_led_torch.o
+#Begin add by zhaohong.chen@tcl.com for POP45 flashlight driver,20151218
+ifeq ($(TARGET_PRODUCT),POP45)
+obj-$(CONFIG_MSMB_CAMERA) += sy7806.o
+endif
 #End add

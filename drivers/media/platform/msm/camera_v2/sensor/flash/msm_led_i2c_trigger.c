@@ -811,11 +811,14 @@ int msm_flash_i2c_probe(struct i2c_client *client,
 #endif
 	/* Assign Global flash control sturcture for local usage */
 	g_fctrl = (void *) fctrl;
+	//Begin mod by zhaohong.chen@tcl.com for POP45 sy7806 flashlight, 20151221
+	#ifndef JRD_PROJECT_POP45
 	rc = msm_i2c_torch_create_classdev(&(client->dev), NULL);
 	if (rc) {
 		pr_err("%s failed to create classdev %d\n", __func__, __LINE__);
 		return rc;
 	}
+	#endif
 	CDBG("%s:%d probe success\n", __func__, __LINE__);
 	return 0;
 
