@@ -28,6 +28,10 @@
 #include "ov5670_otp.h"
 #endif
 #endif
+//add by jin.xia
+#ifdef CONFIG_S5K4H8_TRULY_OTP
+#include "s5k4h8_otp_truly.h"
+#endif
 
 //Begin add by (TCTSZ) jin.xia@tcl.com for camera engineer mode, 2015-11-24
 #include "camera_tct_func.h"
@@ -963,6 +967,30 @@ int32_t msm_sensor_driver_probe(void *setting,
 #endif
 #endif
 //end
+    /*add by jin.xia@tcl.com
+         * if mid =0x02 module is truly
+         * if mid =       module is sunny
+         */  
+#ifdef CONFIG_S5K4H8_TRULY_OTP
+        //pr_err("%s config 4h8 truly otp \n",__func__);
+		if(0x4088 == slave_info->sensor_id_info.sensor_id){
+			uint16_t mid = s5k4h8_otp_get_mid(s_ctrl);
+			pr_err("%s, driver=%s, MID=0x%x\n", __func__, slave_info->sensor_name,mid);
+			//mod by zhaohong.chen@tcl.com for pixi4554g s5k4h8 truly sensor, 2016-03-16
+			if(0x02 == mid && strstr(slave_info->sensor_name,"s5k4h8_truly"))
+			{
+				//truly
+                		pr_err("%s probe ", slave_info->sensor_name);
+			}
+			else
+			{
+				//sunuy
+				pr_err("%s, driver=%s, stop load.\n", __func__, slave_info->sensor_name);
+				rc = -EINVAL;
+				goto camera_power_down;
+			}
+		}
+#endif
 
 	pr_err("%s probe succeeded", slave_info->sensor_name);
 

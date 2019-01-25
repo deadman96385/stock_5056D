@@ -315,3 +315,9 @@ config OV5670_OTP
     depends on MSMB_CAMERA
     ---help---
       ov5670 sensor otp config.
+
+config S5K4H8_TRULY_OTP
+    bool "s5k4h8 sensor otp config"
+    depends on MSMB_CAMERA
+    ---help---
+      s5k4h8 sensor otp config.

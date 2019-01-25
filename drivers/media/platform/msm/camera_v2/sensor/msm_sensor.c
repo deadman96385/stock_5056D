@@ -26,6 +26,10 @@
 #include "ov5670_otp.h"
 #endif
 
+#ifdef CONFIG_S5K4H8_TRULY_OTP
+#include "s5k4h8_otp_truly.h"
+#endif
+
 #undef CDBG
 #define CDBG(fmt, args...) pr_debug(fmt, ##args)
 
@@ -608,6 +612,12 @@ static long msm_sensor_subdev_ioctl(struct v4l2_subdev *sd,
 #ifdef CONFIG_OV5670_OTP
         if(0x5670 == s_ctrl->sensordata->slave_info->sensor_id){
             ov5670_otp_config(s_ctrl);
+        }
+#endif
+#ifdef CONFIG_S5K4H8_TRULY_OTP
+        //pr_err("%s config 4h8 truly otp",__func__);
+        if(0x4088 == s_ctrl->sensordata->slave_info->sensor_id){
+            s5k4h8_otp_config(s_ctrl);
         }
 #endif
 		return 0
