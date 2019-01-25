@@ -14,3 +14,4 @@ obj-y += camera_tct_func.o
 #End mod by 
 
 obj-$(CONFIG_GC0310) += gc0310.o
+obj-$(CONFIG_GC0310_YUV_PIXI455TF) += gc0310_yuv_pixi455tf.o
