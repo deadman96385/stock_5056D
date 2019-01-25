@@ -722,7 +722,7 @@ static void msm_led_i2c_torch_brightness_set(struct led_classdev *led_cdev,
 
 	/*[BUGFIX]-Mod-BEGIN by TCTSZ.(gaoxiang.zou@tcl.com),  12/21/2015*/
 	//Mod by zhaohong.chen@tcl.com for GOPLAY2 flashlight sgm3784 driver
-	#ifdef JRD_PROJECT_GOPLAY2
+	#if defined(JRD_PROJECT_PIXI464G) || defined(JRD_PROJECT_GOPLAY2)
 	if (value > LED_OFF && value <= LED_FULL)
 	{
 		if (fctrl->func_tbl->flash_led_init)
