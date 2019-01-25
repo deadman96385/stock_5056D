@@ -991,6 +991,27 @@ int32_t msm_sensor_driver_probe(void *setting,
 			}
 		}
 #endif
+//[Begin][pixi4554g front camera sp2509 module kingcome/sunrise][weicai.long@tcl.com 16/03/2016]
+#ifdef JRD_PROJECT_PIXI4554G
+    if(0x2509 == slave_info->sensor_id_info.sensor_id){
+        int rc_id = 0;
+        uint16_t gpio_id = s_ctrl->sensordata->power_info.gpio_conf->gpio_num_info->gpio_num[SENSOR_GPIO_CUSTOM1];
+        rc_id = gpio_request_one(gpio_id, GPIOF_DIR_IN, "CAM_GPIO_ID");
+        if(0 == rc_id){
+            int value_id = gpio_get_value_cansleep(gpio_id);
+            gpio_free(gpio_id);
+            if((0 == value_id && strcmp(slave_info->sensor_name, "sp2509_kingcome_pixi4554g")) ||
+                (0 < value_id && strcmp(slave_info->sensor_name, "sp2509_sunrise_pixi4554g"))
+                ){
+                pr_err("%s, gpio%d:%d, name:%s, stop load\n", __FUNCTION__, 
+                    gpio_id, value_id, slave_info->sensor_name);
+                rc = -EINVAL;
+                goto camera_power_down;
+            }
+        }
+    }
+#endif //JRD_PROJECT_PIXI4554G
+//[End][pixi4554g front camera sp2509 module kingcome/sunrise][weicai.long@tcl.com 16/03/2016]
 
 	pr_err("%s probe succeeded", slave_info->sensor_name);
 
