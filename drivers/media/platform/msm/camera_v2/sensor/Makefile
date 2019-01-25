@@ -15,3 +15,4 @@ obj-y += camera_tct_func.o
 
 obj-$(CONFIG_GC0310) += gc0310.o
 obj-$(CONFIG_GC0310_YUV_PIXI455TF) += gc0310_yuv_pixi455tf.o
+obj-$(CONFIG_GC0310_YUV_SHINETCH) += gc0310_yuv_shinetch.o
