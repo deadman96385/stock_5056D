@@ -26,3 +26,7 @@ ifeq ($(TARGET_PRODUCT),Pixi464G)
 #/*[BUGFIX]-Mod-BEGIN by TCTSZ.(gaoxiang.zou@tcl.com), PR 12/21/2015*/
 obj-$(CONFIG_MSMB_CAMERA) += ktd2682.o
 endif
+ifeq ($(TARGET_PRODUCT),Pixi464GCricket)
+#/*[BUGFIX]-Mod-BEGIN by TCTSZ.(gaoxiang.zou@tcl.com), PR 12/21/2015*/
+obj-$(CONFIG_MSMB_CAMERA) += ktd2682.o
+endif
