@@ -297,3 +297,9 @@ config GC0310_SUNRISE
     depends on MSMB_CAMERA
     ---help---
       Galaxy GC0310 YUV sensor.
+
+config SP0A20_SUNRISE
+    bool "Superpix SP0A20 YUV sensor"
+    depends on MSMB_CAMERA
+    ---help---
+      Superpix SP0A20 YUV sensor.
