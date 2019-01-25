@@ -521,8 +521,8 @@ int msm_sensor_match_id(struct msm_sensor_ctrl_t *s_ctrl)
 		return rc;
 	}
 
-	CDBG("%s: read id: 0x%x expected id 0x%x:\n", __func__, chipid,
-		slave_info->sensor_id);
+	//mod by weicai.long@tcl.com, debug log.
+	pr_err("%s, read id=0x%x, expected id=0x%x\n",__func__, chipid, slave_info->sensor_id);
 	if (chipid != slave_info->sensor_id) {
 		pr_err("msm_sensor_match_id chip id doesnot match\n");
 		return -ENODEV;
@@ -1606,7 +1606,7 @@ int msm_sensor_i2c_probe(struct i2c_client *client,
 		return rc;
 	}
 
-	CDBG("%s %s probe succeeded\n", __func__, client->name);
+	pr_err("%s %s probe succeeded\n", __func__, client->name); // Enable log by zhaohong.chen@tcl.com 
 	snprintf(s_ctrl->msm_sd.sd.name,
 		sizeof(s_ctrl->msm_sd.sd.name), "%s", id->name);
 	v4l2_i2c_subdev_init(&s_ctrl->msm_sd.sd, client,

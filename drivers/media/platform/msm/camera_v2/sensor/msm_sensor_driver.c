@@ -1370,6 +1370,9 @@ static int __init msm_sensor_driver_init(void)
 	int32_t rc = 0;
 
 	CDBG("Enter");
+	//Begin add by (TCTSZ) zhaohong.chen@tcl.com
+	printk(KERN_ERR"-->%s\n",__func__);
+	//End add
 	rc = platform_driver_probe(&msm_sensor_platform_driver,
 		msm_sensor_driver_platform_probe);
 	if (!rc) {
