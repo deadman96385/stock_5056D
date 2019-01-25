@@ -17,3 +17,8 @@ ifeq ($(TARGET_PRODUCT),POP45)
 obj-$(CONFIG_MSMB_CAMERA) += sy7806.o
 endif
 #End add
+#Begin add by zhaohong.chen@tcl.com for GOPLAY2 flashlight driver,20151218
+ifeq ($(TARGET_PRODUCT),GOPLAY2)
+obj-$(CONFIG_MSMB_CAMERA) += sgm3784.o
+endif
+#End add

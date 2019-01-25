@@ -720,6 +720,33 @@ static void msm_led_i2c_torch_brightness_set(struct led_classdev *led_cdev,
 
 	fctrl = (struct msm_led_flash_ctrl_t *) g_fctrl;
 
+	/*[BUGFIX]-Mod-BEGIN by TCTSZ.(gaoxiang.zou@tcl.com),  12/21/2015*/
+	//Mod by zhaohong.chen@tcl.com for GOPLAY2 flashlight sgm3784 driver
+	#ifdef JRD_PROJECT_GOPLAY2
+	if (value > LED_OFF && value <= LED_FULL)
+	{
+		if (fctrl->func_tbl->flash_led_init)
+			fctrl->func_tbl->flash_led_init(fctrl);
+
+		if (value > LED_HALF) 
+		{
+			if (fctrl->func_tbl->flash_led_high)
+				fctrl->func_tbl->flash_led_high(fctrl);
+		}
+		else if (value > LED_OFF) 
+		{
+			if (fctrl->func_tbl->flash_led_low)
+				fctrl->func_tbl->flash_led_low(fctrl);
+		}
+	}
+	else 
+	{
+		if (fctrl->func_tbl->flash_led_off)
+			fctrl->func_tbl->flash_led_off(fctrl);
+		if (fctrl->func_tbl->flash_led_release)
+			fctrl->func_tbl->flash_led_release(fctrl);
+	}
+	#else 
 	if (value > LED_OFF) {
 		if (fctrl->func_tbl->flash_led_init)
 			fctrl->func_tbl->flash_led_init(fctrl);
@@ -731,6 +758,8 @@ static void msm_led_i2c_torch_brightness_set(struct led_classdev *led_cdev,
 		if (fctrl->func_tbl->flash_led_release)
 			fctrl->func_tbl->flash_led_release(fctrl);
 	}
+	#endif
+	//End mod
 };
 
 static struct led_classdev msm_torch_i2c_led = {
