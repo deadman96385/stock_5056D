@@ -291,3 +291,9 @@ config MSM_FD
 	 depends on MSMB_CAMERA
 	 ---help---
 	    Enables support for the MSM FD face detection engine.
+
+config GC0310_SUNRISE
+    bool "Galaxy GC0310 YUV sensor"
+    depends on MSMB_CAMERA
+    ---help---
+      Galaxy GC0310 YUV sensor.
