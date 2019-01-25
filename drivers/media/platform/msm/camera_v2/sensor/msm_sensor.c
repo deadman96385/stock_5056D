@@ -34,6 +34,10 @@
 #include "s5k5e8_otp.h"
 #endif
 
+#ifdef CONFIG_OV8865_OTP
+#include "ov8865_otp.h"
+#endif
+
 #ifdef CONFIG_S5K4H8_TRULY_OTP
 #include "s5k4h8_otp_truly.h"
 #endif
@@ -645,6 +649,11 @@ static long msm_sensor_subdev_ioctl(struct v4l2_subdev *sd,
 #ifdef CONFIG_S5K5E8_OTP
         if(0x5e80 == s_ctrl->sensordata->slave_info->sensor_id){
             s5k5e8_otp_config(s_ctrl);
+        }
+#endif
+#ifdef CONFIG_OV8865_OTP
+        if(0x8865 == s_ctrl->sensordata->slave_info->sensor_id){
+            ov8865_otp_config(s_ctrl);
         }
 #endif
 		return 0

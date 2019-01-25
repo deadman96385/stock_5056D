@@ -339,3 +339,9 @@ config S5K5E8_OTP
     depends on MSMB_CAMERA
     ---help---
       s5k5e8 sensor otp config.
+
+config OV8865_OTP
+    bool "ov8865 sensor otp config"
+    depends on MSMB_CAMERA
+    ---help---
+      ov8865 sensor otp config.
