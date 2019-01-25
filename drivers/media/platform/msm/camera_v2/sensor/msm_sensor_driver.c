@@ -23,6 +23,11 @@
 #include "ov8858_otp.h"
 #endif
 //SZ xuejian.zhong@tcl.com add 2016.03.07
+#if defined(JRD_PROJECT_PIXI464G) || defined(JRD_PROJECT_PIXI464GCRICKET)
+#ifdef CONFIG_OV5670_OTP
+#include "ov5670_otp.h"
+#endif
+#endif
 
 //Begin add by (TCTSZ) jin.xia@tcl.com for camera engineer mode, 2015-11-24
 #include "camera_tct_func.h"
@@ -936,6 +941,28 @@ int32_t msm_sensor_driver_probe(void *setting,
 
     }
 #endif
+	//SZ xuejian.zhong@tcl.com add 2016.03.07
+#if defined(JRD_PROJECT_PIXI464G) || defined(JRD_PROJECT_PIXI464GCRICKET)
+#ifdef CONFIG_OV5670_OTP
+
+    if(0x5670 == slave_info->sensor_id_info.sensor_id){
+
+        uint16_t mid = ov5670_otp_get_mid(s_ctrl);
+
+        if(OV5670_MID_QTECH != mid && 0 == strcmp(slave_info->sensor_name, "ov5670_qtech")){
+            pr_err("%s, driver=%s, stop load.\n", __func__, slave_info->sensor_name);
+            rc = -EINVAL;
+            goto camera_power_down;
+        }else if (OV5670_MID_EWELLY != mid && 0 == strcmp(slave_info->sensor_name, "ov5670_ewelly")) {
+        	  pr_err("%s, driver=%s, stop load.\n", __func__, slave_info->sensor_name);
+            rc = -EINVAL;
+            goto camera_power_down;
+        }
+
+    }
+#endif
+#endif
+//end
 
 	pr_err("%s probe succeeded", slave_info->sensor_name);
 

@@ -22,6 +22,10 @@
 #include "ov8858_otp.h"
 #endif
 
+#ifdef CONFIG_OV5670_OTP
+#include "ov5670_otp.h"
+#endif
+
 #undef CDBG
 #define CDBG(fmt, args...) pr_debug(fmt, ##args)
 
@@ -599,6 +603,11 @@ static long msm_sensor_subdev_ioctl(struct v4l2_subdev *sd,
 #ifdef CONFIG_OV8858_OTP
         if(0x8858 == s_ctrl->sensordata->slave_info->sensor_id){
             ov8858_otp_config(s_ctrl);
+        }
+#endif
+#ifdef CONFIG_OV5670_OTP
+        if(0x5670 == s_ctrl->sensordata->slave_info->sensor_id){
+            ov5670_otp_config(s_ctrl);
         }
 #endif
 		return 0

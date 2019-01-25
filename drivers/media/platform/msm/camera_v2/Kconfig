@@ -309,3 +309,9 @@ config OV8858_OTP
     depends on MSMB_CAMERA
     ---help---
       ov8858 sensor otp config.
+
+config OV5670_OTP
+    bool "ov5670 sensor otp config"
+    depends on MSMB_CAMERA
+    ---help---
+      ov5670 sensor otp config.
