@@ -24,6 +24,7 @@ obj-$(CONFIG_SP0A20_SUNRISE) += sp0a20_sunrise.o
 obj-$(CONFIG_OV8858_OTP) += ov8858_otp.o
 obj-$(CONFIG_OV5670_OTP) += ov5670_otp.o
 obj-$(CONFIG_S5K4H8_OTP) += s5k4h8_otp.o
+obj-$(CONFIG_S5K5E8_OTP) += s5k5e8_otp.o
 #end add
 
 #add by jin.xia@tcl.com

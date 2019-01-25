@@ -333,3 +333,9 @@ config S5K4H8_OTP
     depends on MSMB_CAMERA
     ---help---
       s5k4h8 sensor otp config.
+
+config S5K5E8_OTP
+    bool "s5k5e8 sensor otp config"
+    depends on MSMB_CAMERA
+    ---help---
+      s5k5e8 sensor otp config.
