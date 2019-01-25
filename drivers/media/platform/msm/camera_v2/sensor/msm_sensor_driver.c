@@ -18,6 +18,10 @@
 #include "msm_cci.h"
 #include "msm_camera_dt_util.h"
 
+//Begin add by (TCTSZ) jin.xia@tcl.com for camera engineer mode, 2015-11-24
+#include "camera_tct_func.h"
+//End add
+
 /* Logging macro */
 #undef CDBG
 #define CDBG(fmt, args...) pr_debug(fmt, ##args)
@@ -961,6 +965,10 @@ int32_t msm_sensor_driver_probe(void *setting,
 
 	msm_sensor_fill_sensor_info(s_ctrl, probed_info, entity_name);
 
+	//Begin add by (TCTSZ) jin.xia@tcl.com for camera engineer mode, 2015-11-24
+	if(s_ctrl->is_probe_succeed)
+		sensor_sysfs_init(slave_info->sensor_name,(int)(s_ctrl->sensordata->sensor_info->position));
+	//End add
 	return rc;
 
 camera_power_down:

@@ -21,6 +21,10 @@
 #undef CDBG
 #define CDBG(fmt, args...) pr_debug(fmt, ##args)
 
+//Begin add by (TCTSZ) jin.xia@tcl.com for camera engineer mode, 2015-11-24
+#include "camera_tct_func.h"
+//End add
+
 static struct v4l2_file_operations msm_sensor_v4l2_subdev_fops;
 static void msm_sensor_adjust_mclk(struct msm_camera_power_ctrl_t *ctrl)
 {
@@ -523,6 +527,9 @@ int msm_sensor_match_id(struct msm_sensor_ctrl_t *s_ctrl)
 
 	//mod by weicai.long@tcl.com, debug log.
 	pr_err("%s, read id=0x%x, expected id=0x%x\n",__func__, chipid, slave_info->sensor_id);
+	//Begin add by (TCTSZ) jin.xia@tcl.com for camera engineer mode, 2015-11-24
+	cur_sensor_update(s_ctrl);
+	//End add
 	if (chipid != slave_info->sensor_id) {
 		pr_err("msm_sensor_match_id chip id doesnot match\n");
 		return -ENODEV;
@@ -1607,6 +1614,10 @@ int msm_sensor_i2c_probe(struct i2c_client *client,
 	}
 
 	pr_err("%s %s probe succeeded\n", __func__, client->name); // Enable log by zhaohong.chen@tcl.com 
+
+	//Begin add by zhaohong.chen for sensor node info
+	sensor_sysfs_init(client->name,(int)(s_ctrl->sensordata->sensor_info->position));
+	//End add
 	snprintf(s_ctrl->msm_sd.sd.name,
 		sizeof(s_ctrl->msm_sd.sd.name), "%s", id->name);
 	v4l2_i2c_subdev_init(&s_ctrl->msm_sd.sd, client,

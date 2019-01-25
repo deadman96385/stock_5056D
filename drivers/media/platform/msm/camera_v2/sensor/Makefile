@@ -8,4 +8,9 @@ obj-$(CONFIG_MSM_CAMERA_SENSOR) += msm_sensor_init.o msm_sensor_driver.o msm_sen
 obj-$(CONFIG_MT9M114) += mt9m114.o
 obj-$(CONFIG_OV5645) += ov5645.o
 obj-$(CONFIG_OV5645) += ov7695.o
+
+#Begin mod by (TCTSZ) jin.xia@tcl.com for engineer mode, 2015-11-24
+obj-y += camera_tct_func.o
+#End mod by 
+
 obj-$(CONFIG_GC0310) += gc0310.o
