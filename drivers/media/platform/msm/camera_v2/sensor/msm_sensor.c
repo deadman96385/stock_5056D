@@ -30,6 +30,10 @@
 #include "s5k4h8_otp_truly.h"
 #endif
 
+#ifdef CONFIG_OV8856_SUNNY_OTP
+#include "ov8856_otp.h"
+#endif
+
 #undef CDBG
 #define CDBG(fmt, args...) pr_debug(fmt, ##args)
 
@@ -618,6 +622,11 @@ static long msm_sensor_subdev_ioctl(struct v4l2_subdev *sd,
         //pr_err("%s config 4h8 truly otp",__func__);
         if(0x4088 == s_ctrl->sensordata->slave_info->sensor_id){
             s5k4h8_otp_config(s_ctrl);
+        }
+#endif
+#ifdef CONFIG_OV8856_SUNNY_OTP
+        if(0x885a == s_ctrl->sensordata->slave_info->sensor_id){
+            ov8856_otp_config(s_ctrl);
         }
 #endif
 		return 0

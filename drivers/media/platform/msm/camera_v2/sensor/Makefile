@@ -27,4 +27,5 @@ obj-$(CONFIG_OV5670_OTP) += ov5670_otp.o
 
 #add by jin.xia@tcl.com
 obj-$(CONFIG_S5K4H8_TRULY_OTP) += s5k4h8_otp_truly.o
+obj-$(CONFIG_OV8856_SUNNY_OTP) += ov8856_otp.o
 #end add
